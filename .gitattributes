@@ -1,0 +1,6 @@
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.py filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpg.png filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+/Users/aadipalnitkar/PRG-Underwater-Simulation/data/blender_data/landscape/continuous_texture/continuous-sand-texture-2.jpg.png filter=lfs diff=lfs merge=lfs -text
