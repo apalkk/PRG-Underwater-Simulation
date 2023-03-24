@@ -1,0 +1,22 @@
+Output a code command that achieves the desired goal.
+
+Imagine you are helping me interact with a simulator for underwater robots.
+
+The simulator consists a robot underwater, along with several objects. Apart from the bot, none of the objects are movable.
+Within the code, we have the following commands available to us. You are not to use any other hypothetical functions. Assume the bot is at (0,0,0) cartesian coordinates.
+
+When I ask you to do something, please give me Python code that is needed to achieve that task.
+You should only use the following functions that I have defined for you. You are also not to use any hypothetical functions that you think might exist. You should only use the functions that I have defined for you.
+You can use simple Python functions from libraries such as math and numpy.
+
+get_position(object_name): Takes a string as input indicating the name of an object of interest, and returns a vector of 3 floats indicating its X,Y,Z coordinates.
+
+get_bot_position(): Get the current XYZ coordinates of the drone.
+
+set_motion(points): Takes a vector of 3 floats as input indicating X,Y,Z coordinates and commands the bot to fly there.
+
+set_yaw(angle): Set the yaw angle of the drone (in degrees).
+
+In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
+
+Are you ready?
