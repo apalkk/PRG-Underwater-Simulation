@@ -1,5 +1,5 @@
 # Underwater-Robotics
-We are working under the Perceptions and Robotics Group (PRG) at UMD, to use OpenAI's ChatGPT for applications in robotics. We are working on creating a high level function library which can be controlled by ChatGPT and can then be used to undertake several complex tasks. Currently an ongoing project.
+We are working under the Perceptions and Robotics Group (PRG) at UMD, to use OpenAI's ChatGPT for applications in robotics. We are working on creating a high level function library which can be controlled by ChatGPT and can then be used to undertake several complex tasks which would otherwise require human intervention. Currently an ongoing project.
 
 ## Tasks
 - [x] 2D bounding Box of objects from Blender `2.93`
