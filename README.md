@@ -20,3 +20,10 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 ## Blender model
 * BlueROV model downlaod from [here](https://github.com/patrickelectric/bluerov_ros_playground)
 * Oysters model download from [here](https://drive.google.com/drive/folders/1XY2yMnFDCiSR8H6S84OS8WX1tzu2OnCW?usp=sharing)  
+
+## Proposed Functions For the API Library
+* getBotPosition() - Returns position of the robot in the form of a tuple containing x,y,z coordinates called points.
+* getPosition(obj_name) - Returns position in the form of points of any object whose name is passed to the function.
+* setMotion(points) - Moves the robot to those set of points at a certain time in the future.
+* setYaw(angle) - Sets the yaw angle for the bot.
+* setPitch() and setRoll() functions may also be added later. They are not necessary now as the robot is being considered to be a boat.
