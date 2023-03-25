@@ -22,7 +22,7 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 * Oysters model download from [here](https://drive.google.com/drive/folders/1XY2yMnFDCiSR8H6S84OS8WX1tzu2OnCW?usp=sharing)  
 
 ## Proposed Functions For the API Library
-**The api library functions are written in chat_script/func.py file**
+```The api library functions are written in chat_script/func.py file```
 * getBotPosition() - Returns position of the robot in the form of a tuple containing x,y,z coordinates called points.
 * getPosition(obj_name) - Returns position in the form of points of any object whose name is passed to the function.
 * setMotion(points) - Moves the robot to those set of points at a certain time in the future.
