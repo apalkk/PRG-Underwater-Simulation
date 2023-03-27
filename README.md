@@ -7,7 +7,7 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 - [x] Integrate LiDAR/SONAR with blender
 - [x] Train yolo on the generated data from blender
 - [ ] Rover position data with detections on PCL
-\n **Note : Add git lfs tracking in the .gitattributes file if python files are bigger than 50MB**
+- **Note : Add git lfs tracking in the .gitattributes file if python files are bigger than 50MB**
 
 ## Google Colab Notebook
 * colab notebook used to train the yolov4-tiny, find it [here](https://colab.research.google.com/drive/1RePfSTb7c1tPAuh_D-ySLhrG78gxkF9D?usp=sharing)
