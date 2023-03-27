@@ -1,4 +1,6 @@
 from func import ask,extract_python_code
+import math
+import numpy
 import os
 import openai
 import json
