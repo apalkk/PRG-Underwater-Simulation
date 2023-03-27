@@ -13,7 +13,7 @@ get_position(object_name): Takes a string as input indicating the name of an obj
 
 get_bot_position(): Get the current XYZ coordinates of the drone.
 
-set_motion(points): Takes a vector of 3 floats as input indicating X,Y,Z coordinates and commands the bot to move there.
+set_bot_motion(points): Takes a vector of 3 floats as input indicating X,Y,Z coordinates and commands the bot to move there.
 
 set_yaw(angle): Set the yaw angle of the drone (in degrees).
 
