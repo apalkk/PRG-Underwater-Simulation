@@ -28,3 +28,5 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 * setMotion(points) - Moves the robot to those set of points at a certain time in the future.
 * setYaw(angle) - Sets the yaw angle for the bot.
 * setPitch() and setRoll() functions may also be added later. They are not necessary now as the robot is being considered to be a boat.
+
+**Note : Add git lfs tracking in the .gitattributes file if python files are bigger than 50MB**
