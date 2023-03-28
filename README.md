@@ -24,8 +24,9 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 
 ## Proposed Functions For the API Library
 **The api library functions are written in ```chat_script/func.py```file**
-* getBotPosition() - Returns position of the robot in the form of a tuple containing x,y,z coordinates called points.
-* getPosition(obj_name) - Returns position in the form of points of any object whose name is passed to the function.
-* setMotion(points) - Moves the robot to those set of points at a certain time in the future.
-* setYaw(angle) - Sets the yaw angle for the bot.
-* setPitch() and setRoll() functions may also be added later. They are not necessary now as the robot is being considered to be a boat.
+* get_bot_position() - Returns position of the robot in the form of a tuple containing x,y,z coordinates called points.
+* get_position(obj_name) - Returns position in the form of points of any object whose name is passed to the function.
+* set_bot_motion(points) - Moves the robot to those set of points at a certain time in the future.
+* set_yaw(angle) - Sets the yaw angle for the bot.
+* set_pitch(angle) - Sets the pitch angle for the bot.
+* set_roll(angle) - Sets the roll angle for the bot.
