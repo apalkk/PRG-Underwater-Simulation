@@ -51,9 +51,9 @@ def set_bot_motion(points):
     """
     set_motion('BlueROV',points)
 
-def set_roll(object_name, roll_degrees):
+def set_roll(roll_degrees):
     """
-    Set the roll angle of the object in Blender
+    Set the roll angle of the bot in the simulation.
 
     Args:
         object_name (str): The name of the object
@@ -66,14 +66,14 @@ def set_roll(object_name, roll_degrees):
     roll = math.radians(roll_degrees)
     
     # Get the object
-    obj = bpy.data.objects[object_name]
+    obj = bpy.data.objects['BlueROV']
     
     # Set the Euler angles of the object
     obj.rotation_euler[0] = roll
 
-def set_pitch(object_name, pitch_degrees):
+def set_pitch(pitch_degrees):
     """
-    Set the pitch angle of the object in Blender
+    Set the pitch angle of the bot in the simulation.
 
     Args:
         object_name (str): The name of the object
@@ -86,14 +86,14 @@ def set_pitch(object_name, pitch_degrees):
     pitch = math.radians(pitch_degrees)
     
     # Get the object
-    obj = bpy.data.objects[object_name]
+    obj = bpy.data.objects['BlueROV']
     
     # Set the Euler angles of the object
     obj.rotation_euler[1] = pitch
 
-def set_yaw(object_name, yaw_degrees):
+def set_yaw(yaw_degrees):
     """
-    Set the yaw angle of the object in Blender
+    Set the yaw angle of bot in the simulation.
 
     Args:
         object_name (str): The name of the object
@@ -106,7 +106,7 @@ def set_yaw(object_name, yaw_degrees):
     yaw = math.radians(yaw_degrees)
     
     # Get the object
-    obj = bpy.data.objects[object_name]
+    obj = bpy.data.objects['BlueROV']
     
     # Set the Euler angles of the object
     obj.rotation_euler[2] = yaw
