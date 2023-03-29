@@ -2,11 +2,10 @@ import os
 import openai
 import re
 import math 
-openai.api_key = "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" # API KEY
-
-import math
 import mathutils
 import bpy
+
+openai.api_key = "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" # API KEY (expired)
 
 # Dict contains the code names of objects in the simulation followed by what they are
 object_dict = {
