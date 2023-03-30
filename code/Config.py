@@ -1,3 +1,9 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4b5ef024c8bea094d20fba66c69e21b53024d2326153c5c37eb4ab6bf6f01e7d
-size 233
+WIDTH = 640
+HEIGHT = 480
+LR = 0.0001
+EPOCHS = 500
+TRAIN_PERCENT = 0.8
+BATCH_SIZE = 10
+DATA_DIR = "../Data/Test1"
+MODEL_CHKPT_NAME = "depth_estimation_1"
+MODEL_DIR = r"E://Nitesh-Underwater//Underwater-Robotics//data//Model"
