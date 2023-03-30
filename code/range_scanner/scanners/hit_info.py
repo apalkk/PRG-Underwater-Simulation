@@ -1,3 +1,20 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1dd2859dc232e4e99d74d2ef37bb9cd9c448f0dd64d83227b94ce35973f62513
-size 539
+class HitInfo:
+    def __init__(self, location, faceNormal, faceIndex, distance, target):
+        self.location = location
+        self.faceNormal = faceNormal
+        self.faceIndex = faceIndex
+        self.distance = distance
+        self.target = target
+        self.color = None
+        self.intensity = None
+
+        self.noiseLocation = None
+        self.noiseDistance = None
+
+        self.wasReflected = False
+
+        self.x = None
+        self.y = None
+
+        self.partID = None
+        self.categoryID = None
