@@ -1,3 +1,6 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4f678cf6ee0620188ae7d261e8f7d64aa43ce00228fe530069900d22f95a072b
-size 216
+import numpy as np
+
+# for more distributions see: https://numpy.org/doc/stable/reference/random/generator.html#distributions
+
+def applyNoise(mu, sigma):
+    return np.random.default_rng().normal(mu, sigma, None)
