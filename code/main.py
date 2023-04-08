@@ -1,27 +1,38 @@
 import bpy
 import numpy as np
 import os
+import time
 import sys
 
-path = r"/Users/aadipalnitkar/PRG-Underwater-Simulation/code"
+C = bpy.context
+
+# Enable Post Processing and Use Nodes
+C.scene.render.use_compositing = True
+C.scene.use_nodes = True
+
+path = r"D:\Underwater-share\Underwater-share\code//"
 
 if path not in sys.path:
     sys.path.append(path)
 
 from CreateScene import delete_objs, create_landscape, add_bluerov, add_oyster, set_camera, set_light
-from Utils import get_position, render_img, save_values#, save_plots
+from Utils import get_position, render_img, save_values
 from ImuUtils import  cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
 from RangeScanner import run_scanner, tupleToArray
 #import range_scanner
-from Simulate import set_motion # !!! Change back to simulate if it does not work !!!
+from simulate import set_motion
+                                
 
 
-START_FRAME = 1
-END_FRAME =15
+DEG_2_RAD = np.pi/180.0
 
-SURFACE_SIZE = 20
+START_FRAME = 0
+#END_FRAME = 9160
+END_FRAME = 1000
 
-TIME_TO_WAIT = 1  # [EXPERIMENTAL VALUE] wait for this many frames for oysters to settle down properly
+SURFACE_SIZE = 80
+
+TIME_TO_WAIT =  0 #[EXPERIMENTAL VALUE] wait for this many frames for oysters to settle down properly
 
 IMU_RATE = 120
 FRAME_RATE = 30
@@ -54,7 +65,7 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
              n_clusters, min_oyster, max_oyster,out_dir, motion_path, save_imu=False, save_scanner=False):
     
     # if output dir not present, make one
-    if not os.path.exists(out_dir):
+    if not os.path.exists(out_dir):                                                                                                                                                                         
         os.makedirs(out_dir)
 
     # if render output dir not present, make one
@@ -94,34 +105,46 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
 
 
     # set point source light
-    set_light(0, 0, 30, 1000)
+#    set_light(0, 0, 10, 10000)
     
     # create a random landscape everytime
-    create_landscape(floor_noise, landscape_texture_dir)
+#    create_landscape(floor_noise, landscape_texture_dir, SURFACE_SIZE)
     
     # import blueROV 3d model 
-    front_cam, bottom_cam = add_bluerov(bluerov_path, bluerov_location)
-
+    
+    print("Adding bluerove")
+    front_cam, bottom_cam = add_bluerov(bluerov_path, bluerov_location, front_cam_orientation=(-20, 180, 0))
+    print("bluerov addedd")
+    
     # bpy context object
     context = bpy.context
 
     # scanner object for the rotating LiDAR
     scanner_object = context.scene.objects[front_cam]
     
+    bpy.context.scene.render.engine = 'CYCLES'
+    bpy.context.scene.cycles.device = 'GPU'
+    
+    #bpy.context.scene.world.mist_settings.depth = 45
+    bpy.context.scene.world.mist_settings.falloff = 'QUADRATIC'
+
+#    
     # import oysters at some random location according to cluster size
-    add_oyster(oysters_model_dir,oysters_texture_dir, n_clusters, min_oyster, max_oyster)
+#    add_oyster(oysters_model_dir,oysters_texture_dir, n_clusters, min_oyster, max_oyster, 5)
+    
     
     # set motion path in keyframes
     set_motion('BlueROV', motion_path)
 
     # add third person view camera to the scene
-    third_cam_x = 5.72
-    third_cam_y = 5.25
-    third_cam_z = 22.2
+    third_cam_x = 20
+    third_cam_y = 6
+    third_cam_z = 3
     third_cam_r = 0.34
     third_cam_p = 0
-    third_cam_yaw = 2.35  
-    third_cam,_ = set_camera(third_cam_x, third_cam_y, third_cam_z, third_cam_r, third_cam_p, third_cam_yaw)
+    third_cam_yaw = 2.35 
+    third_cam,_ = set_camera(third_cam_x, third_cam_y, third_cam_z, third_cam_r, third_cam_p, third_cam_yaw, True, focal_length=100)
+    
     
     # create variables to store values
     x_array     = []
@@ -138,84 +161,135 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     z_coordinates = None
     distances     = None
     intensities   = None
-
+    scene = bpy.context.scene
     
-    for frame_count in range(END_FRAME):
-        context.scene.frame_set(frame_count)
+    ###BFAB80 HPL color
+    ####0e92b8  NBRF color
+    #### -------------------main loop----------------------
+    for frame_count in range(START_FRAME, END_FRAME+1, 8):
+#        TIME_TO_WAIT=3
+#        for wait_count in range(TIME_TO_WAIT):
+#            bpy.context.scene.frame_set(wait_count)
+        print("frame: ",frame_count)
+        bpy.context.scene.frame_set(frame_count)
+        for scene in bpy.data.scenes:
+            for node in scene.node_tree.nodes:
+                if node.type == 'OUTPUT_FILE':
+                    node.base_path = os.path.join(third_cam_dir,str(frame_count)+"_masks")
+#                    if os.path.exists(node.base_path):
+#                        print('path exists')
+#                    else:
+#                        print('path created')
+#                        os.mkdir(node.base_path)
+        
 
-        if frame_count >= TIME_TO_WAIT:  # assuming all objects settle down
+#        x, y, z, rot_x, rot_y, rot_z = get_position('BlueROV')
+#        
+#        x_array.append(x)
+#        y_array.append(y)
+#        z_array.append(z)
+#        roll_array.append(rot_x)
+#        pitch_array.append(rot_y)
+#        yaw_array.append(rot_z)
+#        save_values(position_dir, POSITIONS_FILENAME, [[x], [y], [z], [rot_x], [rot_y], [rot_z]])
+#        
+#        
+#        if frame_count >= START_FRAME + 2:
+#            # calculate true accelerometer values
+#            true_accel = cal_linear_acc(x_array, y_array, z_array, 30)
+#           
 
-            x, y, z, rot_x, rot_y, rot_z = get_position('BlueROV')
-            
-            x_array.append(x)
-            y_array.append(y)
-            z_array.append(z)
-            roll_array.append(rot_x)
-            pitch_array.append(rot_y)
-            yaw_array.append(rot_z)
-            save_values(position_dir, POSITIONS_FILENAME,[x,y,z,rot_x,rot_y,rot_z])
+#            # calculate true gyroscope values
+#            true_gyro = cal_angular_vel(roll_array, pitch_array, yaw_array, 30)
+#        
 
-            if frame_count >= TIME_TO_WAIT+3:
-                print(len(x_array))
-                # calculate true accelerometer values
-                true_accel = cal_linear_acc(x_array, y_array, z_array, 30)
+#            # calculate simulated accelerometer values from true values
+#            simulated_accel = acc_gen(IMU_RATE, true_accel, ACC_ERROR, ACC_VIB)
+#            
+#            # calculate simulated gyroscope values from true values
+#            simulated_gyro = gyro_gen(IMU_RATE, true_gyro, GYRO_ERROR, GYRO_VIB)
+#         
 
-                # calculate true gyroscope values
-                true_gyro = cal_angular_vel(roll_array, pitch_array, yaw_array, 30)
+#            # array has 3 elements in it, remove the first element
+#            x_array.pop(0)
+#            y_array.pop(0)
+#            z_array.pop(0)
+#            roll_array.pop(0)
+#            pitch_array.pop(0)
+#            yaw_array.pop(0)
 
-                # calculate simulated accelerometer values from true values
-                simulated_accel = acc_gen(IMU_RATE, true_accel, ACC_ERROR, ACC_VIB)
-
-                # calculate simulated gyroscope values from true values
-                simulated_gyro = gyro_gen(IMU_RATE, true_gyro, GYRO_ERROR, GYRO_VIB)
-
-                # array has 3 elements in it, remove the first element
-                x_array.pop(0)
-                y_array.pop(0)
-                z_array.pop(0)
-                roll_array.pop(0)
-                pitch_array.pop(0)
-                yaw_array.pop(0)
-
-                # save the simulated values in a text file
-                if save_imu:
-                    data_2_write = [simulated_accel, simulated_gyro]
-                    save_values(imu_dir, IMU_FILENAME, data_2_write)
+#            # save the simulated values in a text file
+#            if save_imu:
+#                data_2_write = [simulated_accel, simulated_gyro]
+#                save_values(imu_dir, IMU_FILENAME, data_2_write)
 
                 # plot simulated accelerometer and simulated gyro for each point of time
 
-                if frame_count % FRAME_SKIP == 0:
-                    scan_values = run_scanner(context, scanner_object)
-                    mapped_data = np.array(list(map(lambda hit: tupleToArray(hit), scan_values))).transpose()
+    #            if frame_count % FRAME_SKIP == 0:
+    #                print("Started Range Scanner")
+    #                start = time.time()
+    #                scan_values = run_scanner(context, scanner_object, fov=120)
+    #                print("scan complete")
+    #                mapped_data = np.array(list(map(lambda hit: tupleToArray(hit), scan_values))).transpose()
+    #                if len(mapped_data):
+    #                    x_coordinates = [x_ - x for x_ in mapped_data[2]]
+    #                    y_coordinates = [y_ - y for y_ in mapped_data[3]]
+    #                    z_coordinates = mapped_data[4]
+    #                    distances     = mapped_data[5]
+    #                    # intensities   = mappedData[6]  # we do not need intensities values currently
 
-                    x_coordinates = mapped_data[2]
-                    y_coordinates = mapped_data[3]
-                    z_coordinates = mapped_data[4]
-                    distances     = mapped_data[5]
-                    # intensities   = mappedData[6]  # we do not need intensities values currently
-
-                    # save the values in a text file
-                    if save_scanner:
-                        data_2_write = [x_coordinates, y_coordinates, z_coordinates, distances]
-                        save_values(scanner_dir, SCANNER_FILENAME, data_2_write)
-                        save_plots(scanner_dir, str(frame_count)+".png", data_2_write, [x, y, z])
-                #     # plot the coordinates, distances and intensities for each point of time
-
+    #                        # save the values in a text file
+    #                    if save_scanner:
+    #                        data_2_write = [x_coordinates, y_coordinates, z_coordinates, distances]
+    #                        save_values(scanner_dir, SCANNER_FILENAME, data_2_write)
+    #                        save_plots(scanner_dir, str(frame_count)+".png", data_2_write, [x, y, z])
+    #                print("Completed Range Scanner in: ", time.time() - start)
+                
             # save only some frames depending on the imu rate and frame rate
-            if frame_count % IMU_STEP_SIZE == 0:
-                # save RGB and DEPTH images
-                render_img(bottom_cam_dir, frame_count, bottom_cam, save_both=True)
-                render_img(front_cam_dir, frame_count, front_cam, save_both=True)
-                render_img(third_cam_dir, frame_count, third_cam, save_both=True)
+          
 
-            # [OPTIONAL] - display the image continously with opencv
-            # [OPTIONAL] - run yolo-oyster detection on the rendered img
+            # save RGB and DEPTH images
+        #render_img(bottom_cam_dir, frame_count, bottom_cam, save_RGB=True)
+        #render_img(front_cam_dir, frame_count, front_cam, save_RGB=True)
+        #render_img(front_cam_dir, frame_count, front_cam, save_DEPTH=True)
+        #render_img(third_cam_dir, frame_count, third_cam, save_RGB=True)
+        render_img(third_cam_dir, frame_count, third_cam, save_regular=True,save_RGB=False)
 
+
+def generate_circular_points(radius, center, init_angle=0.0, num_points=20):
+
+    center_x = center[0]
+    center_y = center[1]
+
+    points = []
+    
+    for theta in np.linspace(np.pi, 3*np.pi, num_points):
+        x = radius * np.cos(theta) + center_x
+        y = radius * np.sin(theta) + center_y
+
+        theta += init_angle
+        points.append([x, y, theta])
+
+    return points
+
+
+def generate_motion_path(points, end_frame, object_z = 3.5, object_roll=0.0, object_pitch=0.0):
+    num_key_frames = len(points)
+    motion_path = {}
+    for idx, key_frame in enumerate(np.linspace(0, end_frame, num_key_frames)):
+        motion_path[key_frame] = [(points[idx][0],points[idx][1], object_z), (object_roll, object_pitch, points[idx][2])]
+    
+    return motion_path
+        
+    
+
+
+# ---------------------------------------------------------
 
 if __name__=="__main__":
     
     # register range_scanner module
-    # range_scanner.register()
+    #range_scanner.register()
 
     # absolute path of the script
     script_path = os.path.dirname(os.path.abspath(__file__))
@@ -224,51 +298,92 @@ if __name__=="__main__":
     # remove the last dir from path so that we are in base directory and can navigate further
     base_dir_path = script_path.split('code')[0]
     print("base_dir_path:",base_dir_path)
+    base_dir_path  = r"D:\Underwater-share\Underwater-share"
 
     try:
         # delete all previously created objects from the scene
-        delete_objs()
+#        delete_objs()
         
         # landscape parameters
-        floor_noise = 3.5  # seabed smoothens out as the floor_noise is increased
+        floor_noise =1  # seabed smoothens out as the floor_noise is increased
         landscape_texture_dir = base_dir_path + "//data//blender_data//landscape//textures//"
         
         # blueRov parameters, initial position and orientation
         bluerov_model_path = base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae"
-        bluerov_location = (-0.85, -0.65, 3.45)
-        bluerov_orientation = (1.57, 0, 1.57)
+        bluerov_location = (13.5, 18.5, 1.5)
+        bluerov_orientation = (1.57, 0, 0)
         
         # oysters paramteres
         oysters_model_dir = base_dir_path + "//data//blender_data//oysters//model//"
         oysters_texture_dir = base_dir_path + "//data//blender_data//oysters//textures//"
         n_clusters = 1
-        min_oyster = 1
+        min_oyster = 5
         max_oyster = None
     
         # dir where all the results will be saved
-        out_dir = base_dir_path + "//data//output//"
+        out_dir = base_dir_path + "//data//final_output_3_10_23_test//"
+        #all densities are 5 by default. z=10 as default
+        
+#        points = generate_circular_points(radius=17.5, center=[30, 16], init_angle=0.22-3.14, num_points=20)
+        
+#        motion_path = generate_motion_path(points, 17000, object_roll=1.57)
         
         # bluerov motion path
         motion_path = {
             0+TIME_TO_WAIT: [bluerov_location, bluerov_orientation],
-            80+TIME_TO_WAIT: [(bluerov_location[0]+4.5, bluerov_location[1], bluerov_location[2]),
-            (bluerov_orientation[0], bluerov_orientation[1], bluerov_orientation[2])],
-            100+TIME_TO_WAIT: [(bluerov_location[0]+5, bluerov_location[1], bluerov_location[2]),
-            (bluerov_orientation[0], bluerov_orientation[1]+0.2, bluerov_orientation[2]+1.57)],
-            180+TIME_TO_WAIT: [(bluerov_location[0]+4.5, bluerov_location[1]+2.3, bluerov_location[2]+0.7),
-            (bluerov_orientation[0], bluerov_orientation[1]+0.1, bluerov_orientation[2]+1.57)],
-            200+TIME_TO_WAIT: [(bluerov_location[0]+4, bluerov_location[1]+2.8, bluerov_location[2]+1),
-            (bluerov_orientation[0], bluerov_orientation[1]+0.1, bluerov_orientation[2]+2.8)],
-            300+TIME_TO_WAIT: [(bluerov_location[0], bluerov_location[1]+5, bluerov_location[2]),
-            (bluerov_orientation[0], bluerov_orientation[1], bluerov_orientation[2]+2.8)]
-                       }
 
+            2000+TIME_TO_WAIT: [(13.5, 8.5, 1.5),
+            (90*DEG_2_RAD, 0, 0*DEG_2_RAD)],
+            
+            3000+TIME_TO_WAIT: [(16.75, 4, 1.5),
+            (90*DEG_2_RAD, 0, 60*DEG_2_RAD)],
+            
+            4000+TIME_TO_WAIT: [(20,3,1.5),
+            (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
+            
+            5000+TIME_TO_WAIT: [(23.784,7,1.5),
+            (90*DEG_2_RAD, 0, 170*DEG_2_RAD)],
+            
+            7000+TIME_TO_WAIT: [(23.13,21,1.5),
+            (90*DEG_2_RAD, 0, 180*DEG_2_RAD)],
+            
+            8000+TIME_TO_WAIT: [(27.287,24.265,1.5),
+            (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
+            
+            9000+TIME_TO_WAIT: [(32.12, 21, 1.5),
+            (90*DEG_2_RAD, 0, 0*DEG_2_RAD)],
+                    
+            11000+TIME_TO_WAIT: [(35.43,7,1.5),
+            (90*DEG_2_RAD, 0, 20*DEG_2_RAD)],
+                    
+            12000+TIME_TO_WAIT: [(38,4,1.5),
+            (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
+            
+            13000+TIME_TO_WAIT: [(42,7,1.5),
+            (90*DEG_2_RAD, 0, 180*DEG_2_RAD)],
+            
+            15000+TIME_TO_WAIT: [(40,21.54,1.5),
+            (90*DEG_2_RAD, 0, 200*DEG_2_RAD)],
+            
+            16000+TIME_TO_WAIT: [(36.22,23.72,1.5),
+            (90*DEG_2_RAD, 0, 270*DEG_2_RAD)],
+            
+            18500+TIME_TO_WAIT: [(19,23.184,1.5),
+            (90*DEG_2_RAD, 0, 270*DEG_2_RAD)],
+            
+            20000+TIME_TO_WAIT: [(13.5,18.5,1.5),
+            (90*DEG_2_RAD, 0, 360*DEG_2_RAD)],
+                        }
+        print("starting pipeline")
         # start everything
+        
+        start = time.time()
         start_pipeline(floor_noise, landscape_texture_dir,
                        bluerov_model_path, bluerov_location,
                        oysters_model_dir, oysters_texture_dir, n_clusters, min_oyster, max_oyster,
                        out_dir, motion_path,save_imu=True, save_scanner=True)
-        print("Done")
+        print("total time: ", time.time() - start)
+        print("Done - complete")
     except Exception as e:
         print(e)
 
