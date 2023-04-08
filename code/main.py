@@ -20,7 +20,7 @@ from Utils import get_position, render_img, save_values
 from ImuUtils import  cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
 from RangeScanner import run_scanner, tupleToArray
 #import range_scanner
-from simulate import set_motion
+from Simulate import set_motion
                                 
 
 
