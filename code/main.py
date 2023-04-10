@@ -3,6 +3,52 @@ import numpy as np
 import os
 import time
 import sys
+import requests
+import json
+import re
+
+key = "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"
+url = "https://api.openai.com/v1/chat/completions"
+
+prompt = """Output a code command that achieves the desired goal.
+
+Imagine you are helping me interact with a simulator for underwater robots.
+
+The simulator consists a robot underwater, along with several objects. Apart from the bot, none of the objects are movable.
+Within the code, we have the following commands available to us. You are not to use any other hypothetical functions. Assume the bot is at (0,0,0) cartesian coordinates.
+
+When I ask you to do something, please give me Python code that is needed to achieve that task.
+You should only use the following functions that I have defined for you. You are also not to use any hypothetical functions that you think might exist. You should only use the functions that I have defined for you.
+You can use simple Python functions from libraries such as math and numpy.
+
+set_bot_position(points): Takes a tuple as input indicating the X,Y and Z coordinates you want the bot to move to
+
+get_position(object_name): Takes a string as input indicating the name of an object of interest, and returns a vector of 3 floats indicating its X,Y,Z coordinates.
+
+get_bot_position(): Get the current XYZ coordinates of the drone.
+
+set_motion(points): Takes a vector of 3 floats as input indicating X,Y,Z coordinates and commands the bot to move there.
+
+set_yaw(angle): Set the yaw angle of the drone (in degrees).
+
+set_pitch(angle): Set the pitch angle of the drone (in degrees).
+
+set_roll(angle): Set the roll angle of the drone (in degrees).
+
+In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
+
+Are you ready?"""
+
+instructions = ["Move the bot to position 100,100,100","Move the bot back to origin","Set the yaw angle of the bot to 37"]
+
+instruct = 0
+
+chat_history = [
+    {
+        "role": "system",
+        "content": prompt
+    }
+]
 
 C = bpy.context
 
@@ -10,7 +56,7 @@ C = bpy.context
 C.scene.render.use_compositing = True
 C.scene.use_nodes = True
 
-path = r"D:\Underwater-share\Underwater-share\code//"
+path = r"/Users/aadipalnitkar/Underwater-share/code"
 
 if path not in sys.path:
     sys.path.append(path)
@@ -20,13 +66,14 @@ from Utils import get_position, render_img, save_values
 from ImuUtils import  cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
 from RangeScanner import run_scanner, tupleToArray
 #import range_scanner
-from Simulate import set_motion
+from simulate import set_motion
                                 
 
 
 DEG_2_RAD = np.pi/180.0
 
 START_FRAME = 0
+CURR_FRAME = 0
 #END_FRAME = 9160
 END_FRAME = 1000
 
@@ -167,9 +214,16 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     ####0e92b8  NBRF color
     #### -------------------main loop----------------------
     for frame_count in range(START_FRAME, END_FRAME+1, 8):
+        CURR_FRAME = frame_count
 #        TIME_TO_WAIT=3
 #        for wait_count in range(TIME_TO_WAIT):
 #            bpy.context.scene.frame_set(wait_count)
+        if(frame_count % 8 == 0):
+            if(len(instructions) > instruct):
+                string = ask(chat_history,instructions[instruct])
+                print(string)
+                exec(extract_python_code(string))
+                instruct += 1
         print("frame: ",frame_count)
         bpy.context.scene.frame_set(frame_count)
         for scene in bpy.data.scenes:
@@ -272,6 +326,94 @@ def generate_circular_points(radius, center, init_angle=0.0, num_points=20):
 
     return points
 
+def get_bot_position():
+    """
+    Get the position of BlueROV in the simulation
+
+    Returns:
+        tuple: The x, y, and z coordinates of the object's position
+    """
+    return get_position('BlueROV')
+
+def get_position(object_name):
+    """
+    Get the current position of an object in the simulation
+
+    Args:
+        object_name (str): The name of the object
+
+    Returns:
+        tuple: The x, y, and z coordinates of the object's position
+    """
+    obj = bpy.data.objects[object_name]
+    position = obj.location
+    return (position.x, position.y, position.z)
+
+def set_bot_position(points):
+    """
+    Sets the motion of an object in the future by making the object move to a certian
+    set of points.
+
+    Args:
+        object_name (str): The name of the object
+        points (tuple): The x, y, and z components of the object's motion
+
+    Returns:
+        None
+    """
+    obj = bpy.data.objects['BlueROV']
+    set_motion('BlueROV',{CURR_FRAME:[points,obj.rotation_euler]})
+
+def set_yaw(angle):
+    """
+    Sets the motion of an object in the future by making the object move to a certian
+    set of points.
+
+    Args:
+        object_name (str): The name of the object
+        points (tuple): The x, y, and z components of the object's motion
+
+    Returns:
+        None
+    """
+    obj = bpy.data.objects['BlueROV']
+    set_motion('BlueROV',{CURR_FRAME:[obj.location,(obj.rotation_euler[0],obj.rotation_euler[1],angle)]})
+
+def ask(chat_history,prompt):
+    chat_history.append(
+        {
+            "role": "user",
+            "content": prompt,
+        }
+    )
+
+    headers = {"Authorization": f"Bearer {key}"}
+    data = {'model': 'gpt-3.5-turbo', 'messages': chat_history}
+    poster = requests.post(url, headers=headers, json=data).json()['choices'][0]['message']
+    #print(poster['content'])
+
+    chat_history.append(
+        {
+            "role": "assistant",
+            "content": poster['content'],
+        }
+    )
+    return poster['content']
+
+def extract_python_code(content):
+    code_block_regex = re.compile(r"```(.*?)```", re.DOTALL)
+    code_blocks = code_block_regex.findall(content)
+    if code_blocks:
+        full_code = "\n".join(code_blocks)
+
+        if full_code.startswith("python"):
+            full_code = full_code[7:]
+
+        return full_code
+    else:
+        return None
+
+
 
 def generate_motion_path(points, end_frame, object_z = 3.5, object_roll=0.0, object_pitch=0.0):
     num_key_frames = len(points)
@@ -298,7 +440,7 @@ if __name__=="__main__":
     # remove the last dir from path so that we are in base directory and can navigate further
     base_dir_path = script_path.split('code')[0]
     print("base_dir_path:",base_dir_path)
-    base_dir_path  = r"D:\Underwater-share\Underwater-share"
+    base_dir_path  = r"/Users/aadipalnitkar/Underwater-share"
 
     try:
         # delete all previously created objects from the scene
