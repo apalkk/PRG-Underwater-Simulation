@@ -41,8 +41,6 @@ Are you ready?"""
 
 instructions = ["Move the bot to position 100,100,100","Move the bot back to origin","Set the yaw angle of the bot to 37"]
 
-instruct = 0
-
 chat_history = [
     {
         "role": "system",
@@ -158,6 +156,9 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
 #    create_landscape(floor_noise, landscape_texture_dir, SURFACE_SIZE)
     
     # import blueROV 3d model 
+
+    global instruct
+    instruct = 0
     
     print("Adding bluerove")
     front_cam, bottom_cam = add_bluerov(bluerov_path, bluerov_location, front_cam_orientation=(-20, 180, 0))
@@ -220,7 +221,10 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
 #            bpy.context.scene.frame_set(wait_count)
         if(frame_count % 8 == 0):
             if(len(instructions) > instruct):
-                string = ask(chat_history,instructions[instruct])
+                try:
+                 string = ask(chat_history,instructions[instruct])
+                except:
+                 raise Exception("Error with API key")
                 print(string)
                 exec(extract_python_code(string))
                 instruct += 1
