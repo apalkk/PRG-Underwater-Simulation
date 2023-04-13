@@ -7,7 +7,7 @@ import requests
 import json
 import re
 
-key = "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"
+key = "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"
 url = "https://api.openai.com/v1/chat/completions"
 
 prompt = """Output a code command that achieves the desired goal.
@@ -226,7 +226,10 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
                 except:
                  raise Exception("Error with API key")
                 print(string)
-                exec(extract_python_code(string))
+                try:
+                 exec(extract_python_code(string))
+                except:
+                 print("WARNING : Error with GPT code execution - moving to next instruction")
                 instruct += 1
         print("frame: ",frame_count)
         bpy.context.scene.frame_set(frame_count)
