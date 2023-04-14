@@ -6,11 +6,23 @@ import sys
 import requests
 import json
 import re
+import math
+# Local Imports:
+from CreateScene import delete_objs, create_landscape, add_bluerov, add_oyster, set_camera, set_light
+from Utils import get_position, render_img, save_values
+from ImuUtils import  cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
+from RangeScanner import run_scanner, tupleToArray
+#import range_scanner
+from simulate import set_motion
 
-key = "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"
+key = "<API-KEY>"
 url = "https://api.openai.com/v1/chat/completions"
 
-prompt = """Output a code command that achieves the desired goal.
+object_dict = {
+    'BlueROV' : 'The main robot in our simulation'
+}
+
+prompt = """Output code in python that achieves the desired goal.
 
 Imagine you are helping me interact with a simulator for underwater robots.
 
@@ -21,13 +33,11 @@ When I ask you to do something, please give me Python code that is needed to ach
 You should only use the following functions that I have defined for you. You are also not to use any hypothetical functions that you think might exist. You should only use the functions that I have defined for you.
 You can use simple Python functions from libraries such as math and numpy.
 
-set_bot_position(points): Takes a tuple as input indicating the X,Y and Z coordinates you want the bot to move to
+set_bot_position(points): Takes a tuple as input indicating the X,Y and Z coordinates you want the bot to move to.
 
 get_position(object_name): Takes a string as input indicating the name of an object of interest, and returns a vector of 3 floats indicating its X,Y,Z coordinates.
 
 get_bot_position(): Get the current XYZ coordinates of the drone.
-
-set_motion(points): Takes a vector of 3 floats as input indicating X,Y,Z coordinates and commands the bot to move there.
 
 set_yaw(angle): Set the yaw angle of the drone (in degrees).
 
@@ -35,15 +45,15 @@ set_pitch(angle): Set the pitch angle of the drone (in degrees).
 
 set_roll(angle): Set the roll angle of the drone (in degrees).
 
-add_oyster(): Adds oysters to the simulation.
+put_oyster(): Adds oysters to the simulation.
 
-add_bluerov(): Adds a new bot to the simulation.
+put_bot(): Adds a new bot to the simulation.
 
 In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
 
 Are you ready?"""
 
-instructions = ["Move the bot to position 10,10,10","Add an oyster to the simulation","Set the yaw angle of the bot to 37"]
+instructions = ["Move the bot to position 10,10,10","Set the yaw angle of the bot to 37"]
 
 chat_history = [
     {
@@ -51,6 +61,8 @@ chat_history = [
         "content": prompt
     }
 ]
+
+set_counter = 0
 
 C = bpy.context
 
@@ -62,22 +74,15 @@ path = r"/Users/aadipalnitkar/Underwater-share/code"
 
 if path not in sys.path:
     sys.path.append(path)
-
-from CreateScene import delete_objs, create_landscape, add_bluerov, add_oyster, set_camera, set_light
-from Utils import get_position, render_img, save_values
-from ImuUtils import  cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
-from RangeScanner import run_scanner, tupleToArray
-#import range_scanner
-from simulate import set_motion
                                 
 
 
 DEG_2_RAD = np.pi/180.0
 
+FRAME_INTERVAL = 8
 START_FRAME = 0
 CURR_FRAME = 0
-#END_FRAME = 9160
-END_FRAME = 1000
+END_FRAME = 1000 #9160
 
 SURFACE_SIZE = 80
 
@@ -112,6 +117,11 @@ POSITIONS_FILENAME = "position_values.txt"
 
 def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_location,oysters_model_dir,oysters_texture_dir,\
              n_clusters, min_oyster, max_oyster,out_dir, motion_path, save_imu=False, save_scanner=False):
+
+    global instruct
+    instruct = 0
+    global set_counter
+    set_counter = 0
     
     # if output dir not present, make one
     if not os.path.exists(out_dir):                                                                                                                                                                         
@@ -159,10 +169,7 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     # create a random landscape everytime
 #    create_landscape(floor_noise, landscape_texture_dir, SURFACE_SIZE)
     
-    # import blueROV 3d model 
-
-    global instruct
-    instruct = 0
+    # import blueROV 3d model
     
     print("Adding bluerove")
     front_cam, bottom_cam = add_bluerov(bluerov_path, bluerov_location, front_cam_orientation=(-20, 180, 0))
@@ -218,12 +225,13 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     ###BFAB80 HPL color
     ####0e92b8  NBRF color
     #### -------------------main loop----------------------
-    for frame_count in range(START_FRAME, END_FRAME+1, 8):
+    for frame_count in range(START_FRAME, END_FRAME+1, FRAME_INTERVAL):
         CURR_FRAME = frame_count
+        if set_counter > 0 : set_counter -= 1
 #        TIME_TO_WAIT=3
 #        for wait_count in range(TIME_TO_WAIT):
 #            bpy.context.scene.frame_set(wait_count)
-        if(frame_count % 8 == 0 and frame_count != 0):
+        if(frame_count % 8 == 0 and set_counter == 0):
             if(len(instructions) > instruct):
                 try:
                  string = ask(chat_history,instructions[instruct])
@@ -243,6 +251,7 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
                 
                 instruct += 1
         print("frame: ",frame_count)
+        print(get_bot_position())
         bpy.context.scene.frame_set(frame_count)
         for scene in bpy.data.scenes:
             for node in scene.node_tree.nodes:
@@ -379,8 +388,10 @@ def set_bot_position(points):
     Returns:
         None
     """
+    global set_counter
     obj = bpy.data.objects['BlueROV']
-    set_motion('BlueROV',{CURR_FRAME:[points,obj.rotation_euler]})
+    set_motion('BlueROV',{(CURR_FRAME + (FRAME_INTERVAL * set_counter)):[points,obj.rotation_euler]})
+    set_counter += 1
 
 def set_yaw(angle):
     """
@@ -396,6 +407,64 @@ def set_yaw(angle):
     """
     obj = bpy.data.objects['BlueROV']
     set_motion('BlueROV',{CURR_FRAME:[obj.location,(obj.rotation_euler[0],obj.rotation_euler[1],angle)]})
+
+def set_pitch(angle):
+    """
+    Sets the motion of an object in the future by making the object move to a certian
+    set of points.
+
+    Args:
+        object_name (str): The name of the object
+        points (tuple): The x, y, and z components of the object's motion
+
+    Returns:
+        None
+    """
+    obj = bpy.data.objects['BlueROV']
+    set_motion('BlueROV',{CURR_FRAME:[obj.location,(obj.rotation_euler[0],angle,obj.rotation_euler[2])]})
+
+def set_roll(angle):
+    """
+    Sets the motion of an object in the future by making the object move to a certian
+    set of points.
+
+    Args:
+        object_name (str): The name of the object
+        points (tuple): The x, y, and z components of the object's motion
+
+    Returns:
+        None
+    """
+    obj = bpy.data.objects['BlueROV']
+    set_motion('BlueROV',{CURR_FRAME:[obj.location,(angle,obj.rotation_euler[1],obj.rotation_euler[2])]})
+
+def put_oyster():
+    """
+    Sets the motion of an object in the future by making the object move to a certian
+    set of points.
+
+    Args:
+        object_name (str): The name of the object
+        points (tuple): The x, y, and z components of the object's motion
+
+    Returns:
+        None
+    """
+    add_oyster(base_dir_path + "//data//blender_data//oysters//model//")
+
+def put_bot():
+    """
+    Sets the motion of an object in the future by making the object move to a certian
+    set of points.
+
+    Args:
+        object_name (str): The name of the object
+        points (tuple): The x, y, and z components of the object's motion
+
+    Returns:
+        None
+    """
+    add_bluerov(base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae", bluerov_location, front_cam_orientation=(-20, 180, 0))
 
 def ask(chat_history,prompt):
     chat_history.append(
@@ -447,7 +516,7 @@ def generate_motion_path(points, end_frame, object_z = 3.5, object_roll=0.0, obj
 # ---------------------------------------------------------
 
 if __name__=="__main__":
-    
+
     # register range_scanner module
     #range_scanner.register()
 
@@ -470,8 +539,8 @@ if __name__=="__main__":
         
         # blueRov parameters, initial position and orientation
         bluerov_model_path = base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae"
-        bluerov_location = (13.5, 18.5, 1.5)
-        bluerov_orientation = (1.57, 0, 0)
+        bluerov_location = (0, 0, 0)
+        bluerov_orientation = (0, 0, 0)
         
         # oysters paramteres
         oysters_model_dir = base_dir_path + "//data//blender_data//oysters//model//"
