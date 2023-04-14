@@ -7,7 +7,7 @@ import requests
 import json
 import re
 
-key = "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"
+key = "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"
 url = "https://api.openai.com/v1/chat/completions"
 
 prompt = """Output a code command that achieves the desired goal.
@@ -35,11 +35,15 @@ set_pitch(angle): Set the pitch angle of the drone (in degrees).
 
 set_roll(angle): Set the roll angle of the drone (in degrees).
 
+add_oyster(): Adds oysters to the simulation.
+
+add_bluerov(): Adds a new bot to the simulation.
+
 In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
 
 Are you ready?"""
 
-instructions = ["Move the bot to position 100,100,100","Move the bot back to origin","Set the yaw angle of the bot to 37"]
+instructions = ["Move the bot to position 10,10,10","Add an oyster to the simulation","Set the yaw angle of the bot to 37"]
 
 chat_history = [
     {
@@ -219,7 +223,7 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
 #        TIME_TO_WAIT=3
 #        for wait_count in range(TIME_TO_WAIT):
 #            bpy.context.scene.frame_set(wait_count)
-        if(frame_count % 8 == 0):
+        if(frame_count % 8 == 0 and frame_count != 0):
             if(len(instructions) > instruct):
                 try:
                  string = ask(chat_history,instructions[instruct])
@@ -228,8 +232,15 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
                 print(string)
                 try:
                  exec(extract_python_code(string))
-                except:
-                 print("WARNING : Error with GPT code execution - moving to next instruction")
+                except Exception as e:
+                 print("WARNING : Possible GPT code code block error")
+                 print(e)
+                 try:
+                     exec(string)
+                 except Exception as e:
+                     print("WARNING : GPT - Code could not be executed")
+                     print(e)
+                
                 instruct += 1
         print("frame: ",frame_count)
         bpy.context.scene.frame_set(frame_count)
