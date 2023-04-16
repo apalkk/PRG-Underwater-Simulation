@@ -232,6 +232,10 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
         if(frame_count > FRAME_INTERVAL and set_counter == 0):
             if(INPUT_MODE):
              i = input("Give a command")
+             try:
+                 print(i)
+             except:
+                 print("WARNING - Blank Input, Not Sending To GPT")
              instructions.append(i)
             if(len(instructions) > instruct):
                 try:
