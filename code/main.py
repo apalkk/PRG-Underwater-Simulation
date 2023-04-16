@@ -18,6 +18,11 @@ from simulate import set_motion
 key = "<API-KEY>"
 url = "https://api.openai.com/v1/chat/completions"
 
+INPUT_MODE = True
+FRAME_INTERVAL = 8
+END_FRAME = 1000 #9160
+TIME_TO_WAIT =  0 #[EXPERIMENTAL VALUE] wait for this many frames for oysters to settle down properly
+
 object_dict = {
     'BlueROV' : 'The main robot in our simulation'
 }
@@ -53,7 +58,7 @@ In terms of axis conventions, forward means positive X axis. Right means positiv
 
 Are you ready?"""
 
-instructions = ["Move the bot to position 10,10,10","Set the yaw angle of the bot to 37"]
+instructions = ["Move the bot up bu 10 points"]
 
 chat_history = [
     {
@@ -76,17 +81,10 @@ if path not in sys.path:
     sys.path.append(path)
                                 
 
-
-DEG_2_RAD = np.pi/180.0
-
-FRAME_INTERVAL = 8
 START_FRAME = 0
 CURR_FRAME = 0
-END_FRAME = 1000 #9160
-
+DEG_2_RAD = np.pi/180.0
 SURFACE_SIZE = 80
-
-TIME_TO_WAIT =  0 #[EXPERIMENTAL VALUE] wait for this many frames for oysters to settle down properly
 
 IMU_RATE = 120
 FRAME_RATE = 30
@@ -231,7 +229,10 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
 #        TIME_TO_WAIT=3
 #        for wait_count in range(TIME_TO_WAIT):
 #            bpy.context.scene.frame_set(wait_count)
-        if(frame_count % 8 == 0 and set_counter == 0):
+        if(frame_count > FRAME_INTERVAL and set_counter == 0):
+            if(INPUT_MODE):
+             i = input("Give a command")
+             instructions.append(i)
             if(len(instructions) > instruct):
                 try:
                  string = ask(chat_history,instructions[instruct])
@@ -450,7 +451,7 @@ def put_oyster():
     Returns:
         None
     """
-    add_oyster(base_dir_path + "//data//blender_data//oysters//model//")
+    add_oyster(oysters_model_dir,oysters_texture_dir, n_clusters, min_oyster, max_oyster, 5)
 
 def put_bot():
     """
@@ -561,7 +562,7 @@ if __name__=="__main__":
         motion_path = {
             0+TIME_TO_WAIT: [bluerov_location, bluerov_orientation],
 
-            2000+TIME_TO_WAIT: [(13.5, 8.5, 1.5),
+            2000+TIME_TO_WAIT: [(0, 0, 0),
             (90*DEG_2_RAD, 0, 0*DEG_2_RAD)],
             
             3000+TIME_TO_WAIT: [(16.75, 4, 1.5),
