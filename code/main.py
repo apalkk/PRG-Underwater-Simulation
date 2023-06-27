@@ -1,3 +1,4 @@
+import random
 import bpy
 import numpy as np
 import os
@@ -15,7 +16,10 @@ from RangeScanner import run_scanner, tupleToArray
 #import range_scanner
 from simulate import set_motion
 
-key = "<API-KEY>"
+f = open('/Users/aadipalnitkar/Underwater-share/code/sim.txt', 'r')
+print(f.read())
+
+key = "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"
 url = "https://api.openai.com/v1/chat/completions"
 
 INPUT_MODE = True
@@ -58,7 +62,7 @@ In terms of axis conventions, forward means positive X axis. Right means positiv
 
 Are you ready?"""
 
-instructions = ["Move the bot up bu 10 points"]
+instructions = []
 
 chat_history = [
     {
@@ -116,8 +120,7 @@ POSITIONS_FILENAME = "position_values.txt"
 def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_location,oysters_model_dir,oysters_texture_dir,\
              n_clusters, min_oyster, max_oyster,out_dir, motion_path, save_imu=False, save_scanner=False):
 
-    global instruct
-    instruct = 0
+    put_object("oyster",(0,0,0),(0,0,0))
     global set_counter
     set_counter = 0
     
@@ -169,9 +172,9 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     
     # import blueROV 3d model
     
-    print("Adding bluerove")
+    print("Adding bluerov")
     front_cam, bottom_cam = add_bluerov(bluerov_path, bluerov_location, front_cam_orientation=(-20, 180, 0))
-    print("bluerov addedd")
+    print("bluerov added")
     
     # bpy context object
     context = bpy.context
@@ -230,16 +233,12 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
 #        for wait_count in range(TIME_TO_WAIT):
 #            bpy.context.scene.frame_set(wait_count)
         if(frame_count > FRAME_INTERVAL and set_counter == 0):
-            if(INPUT_MODE):
-             i = input("Give a command")
-             try:
-                 print(i)
-             except:
-                 print("WARNING - Blank Input, Not Sending To GPT")
+            if(INPUT_MODE and len(instructions)==0):
+             i = input("~")
              instructions.append(i)
-            if(len(instructions) > instruct):
+            if(len(instructions) > 0):
                 try:
-                 string = ask(chat_history,instructions[instruct])
+                 string = ask(chat_history,instructions[0])
                 except:
                  raise Exception("Error with API key")
                 print(string)
@@ -254,7 +253,7 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
                      print("WARNING : GPT - Code could not be executed")
                      print(e)
                 
-                instruct += 1
+                instructions.pop()
         print("frame: ",frame_count)
         print(get_bot_position())
         bpy.context.scene.frame_set(frame_count)
@@ -335,10 +334,10 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
           
 
             # save RGB and DEPTH images
-        #render_img(bottom_cam_dir, frame_count, bottom_cam, save_RGB=True)
         #render_img(front_cam_dir, frame_count, front_cam, save_RGB=True)
-        #render_img(front_cam_dir, frame_count, front_cam, save_DEPTH=True)
         #render_img(third_cam_dir, frame_count, third_cam, save_RGB=True)
+        render_img(bottom_cam_dir, frame_count, bottom_cam, save_RGB=True)
+        #render_img(front_cam_dir, frame_count, front_cam, save_DEPTH=True)
         render_img(third_cam_dir, frame_count, third_cam, save_regular=True,save_RGB=False)
 
 
@@ -443,19 +442,41 @@ def set_roll(angle):
     obj = bpy.data.objects['BlueROV']
     set_motion('BlueROV',{CURR_FRAME:[obj.location,(angle,obj.rotation_euler[1],obj.rotation_euler[2])]})
 
-def put_oyster():
+def put_object(object_name : str, loc : tuple, rot : tuple):
     """
     Sets the motion of an object in the future by making the object move to a certian
     set of points.
 
     Args:
         object_name (str): The name of the object
-        points (tuple): The x, y, and z components of the object's motion
+        loc (tuple): The x, y, and z components of the object's location
+        rot (tuple): The x, y, and z components of the object's euler coordinates
 
     Returns:
         None
     """
-    add_oyster(oysters_model_dir,oysters_texture_dir, n_clusters, min_oyster, max_oyster, 5)
+    print("Debuggg")
+    if(object_name.upper().find("OYSTER") != -1):
+        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model/' + random.choice(os.listdir('/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model'))
+        print(v)
+        bpy.ops.import_mesh.stl(filepath = v)
+        bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+        bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False, align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+        return
+    
+    if(object_name.upper().find("ROCK") != -1):
+        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model/' + random.choice(os.listdir('/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model'))
+        bpy.ops.import_mesh.stl(filepath = v)
+        bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+        bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False, align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+        return
+    
+    for v in os.listdir('/Users/aadipalnitkar/Underwater-Share/data/blender_data/special_data'):
+        if(v.find(object_name) != -1):
+         path = '/Users/aadipalnitkar/Underwater-Share/data/blender_data/special_data/' + v
+         bpy.ops.import_mesh.stl(filepath = path)
+         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False, align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
 
 def put_bot():
     """
