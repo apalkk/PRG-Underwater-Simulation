@@ -7,60 +7,51 @@ import sys
 import requests
 import json
 import re
-import math
-# Local Imports:
-from CreateScene import delete_objs, create_landscape, add_bluerov, add_oyster, set_camera, set_light
-from Utils import get_position, render_img, save_values
-from ImuUtils import  cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
-from RangeScanner import run_scanner, tupleToArray
-#import range_scanner
+import importlib.util
+import sys
+import json
+
+# Get the current directory of the script
+script_directory = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to the parent directory
+parent_directory = os.path.dirname(script_directory)
+
+# Construct the path to the settings.json file
+settings_file = os.path.join(parent_directory, "settings.json")
+
+with open(settings_file, 'r') as file:
+     settings = json.load(file)
+
+path = r''+parent_directory
+if path not in sys.path:
+    sys.path.append(path)
+
+from settings import settings
 from simulate import set_motion
+from RangeScanner import run_scanner, tupleToArray
+from ImuUtils import cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
+from Utils import get_position, render_img, save_values
+from CreateScene import delete_objs, create_landscape, add_bluerov, add_oyster, set_camera, set_light
 
-f = open('/Users/aadipalnitkar/Underwater-share/code/sim.txt', 'r')
-print(f.read())
+# Local Imports:
 
-key = "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"
-url = "https://api.openai.com/v1/chat/completions"
+# spec = importlib.util.spec_from_file_location("settings", "/Users/aadipalnitkar/Underwater-share/code/settings.py")
+# foo = importlib.util.module_from_spec(spec)
+# sys.modules["settings"] = foo
+# spec.loader.exec_module(foo)
+# settings : dict = foo.settings
+# print(sys.path)
 
-INPUT_MODE = True
-FRAME_INTERVAL = 8
-END_FRAME = 1000 #9160
-TIME_TO_WAIT =  0 #[EXPERIMENTAL VALUE] wait for this many frames for oysters to settle down properly
+key = settings["key"]
+url = settings["url"]
+INPUT_MODE = settings["input_mode"]
+FRAME_INTERVAL = settings["frame_interval"]
+END_FRAME = settings["last_frame"]
+# [EXPERIMENTAL VALUE] wait for this many frames for oysters to settle down properly
+TIME_TO_WAIT = settings["wait_time"]
 
-object_dict = {
-    'BlueROV' : 'The main robot in our simulation'
-}
-
-prompt = """Output code in python that achieves the desired goal.
-
-Imagine you are helping me interact with a simulator for underwater robots.
-
-The simulator consists a robot underwater, along with several objects. Apart from the bot, none of the objects are movable.
-Within the code, we have the following commands available to us. You are not to use any other hypothetical functions. Assume the bot is at (0,0,0) cartesian coordinates.
-
-When I ask you to do something, please give me Python code that is needed to achieve that task.
-You should only use the following functions that I have defined for you. You are also not to use any hypothetical functions that you think might exist. You should only use the functions that I have defined for you.
-You can use simple Python functions from libraries such as math and numpy.
-
-set_bot_position(points): Takes a tuple as input indicating the X,Y and Z coordinates you want the bot to move to.
-
-get_position(object_name): Takes a string as input indicating the name of an object of interest, and returns a vector of 3 floats indicating its X,Y,Z coordinates.
-
-get_bot_position(): Get the current XYZ coordinates of the drone.
-
-set_yaw(angle): Set the yaw angle of the drone (in degrees).
-
-set_pitch(angle): Set the pitch angle of the drone (in degrees).
-
-set_roll(angle): Set the roll angle of the drone (in degrees).
-
-put_oyster(): Adds oysters to the simulation.
-
-put_bot(): Adds a new bot to the simulation.
-
-In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
-
-Are you ready?"""
+prompt = open(settings["module_path"]+'sim.txt', 'r').read()
 
 instructions = []
 
@@ -79,11 +70,6 @@ C = bpy.context
 C.scene.render.use_compositing = True
 C.scene.use_nodes = True
 
-path = r"/Users/aadipalnitkar/Underwater-share/code"
-
-if path not in sys.path:
-    sys.path.append(path)
-                                
 
 START_FRAME = 0
 CURR_FRAME = 0
@@ -93,7 +79,7 @@ SURFACE_SIZE = 80
 IMU_RATE = 120
 FRAME_RATE = 30
 IMU_STEP_SIZE = cal_imu_step(IMU_RATE, FRAME_RATE)
-FRAME_SKIP = 3 # range scanner will run only on every 3rd frame
+FRAME_SKIP = 3  # range scanner will run only on every 3rd frame
 
 ACC_ERROR = accel_high_accuracy
 GYRO_ERROR = gyro_high_accuracy
@@ -117,32 +103,33 @@ SCANNER_FILENAME = "scanner_values.txt"
 # range scanner output file name
 POSITIONS_FILENAME = "position_values.txt"
 
-def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_location,oysters_model_dir,oysters_texture_dir,\
-             n_clusters, min_oyster, max_oyster,out_dir, motion_path, save_imu=False, save_scanner=False):
 
-    put_object("oyster",(0,0,0),(0,0,0))
+def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_location, oysters_model_dir, oysters_texture_dir,
+                   n_clusters, min_oyster, max_oyster, out_dir, motion_path, save_imu=False, save_scanner=False):
+
+    put_object("oyster", (0, 0, 0), (0, 0, 0))
     global set_counter
     set_counter = 0
-    
+
     # if output dir not present, make one
-    if not os.path.exists(out_dir):                                                                                                                                                                         
+    if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
     # if render output dir not present, make one
     render_out_dir = os.path.join(out_dir, "render_output")
     if not os.path.exists(render_out_dir):
         os.makedirs(render_out_dir)
-    
+
     # if front camera render output dir not present, make one
     front_cam_dir = os.path.join(render_out_dir, "front_cam")
     if not os.path.exists(front_cam_dir):
         os.makedirs(front_cam_dir)
-        
+
     # if third person camera render output dir not present, make one
     third_cam_dir = os.path.join(render_out_dir, "third_cam")
     if not os.path.exists(third_cam_dir):
         os.makedirs(third_cam_dir)
-    
+
     # if bottom facing camera render output dir not present, make one
     bottom_cam_dir = os.path.join(render_out_dir, "bottom_cam")
     if not os.path.exists(bottom_cam_dir):
@@ -157,42 +144,41 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     scanner_dir = os.path.join(out_dir, "scanner_dir")
     if not os.path.exists(scanner_dir):
         os.makedirs(scanner_dir)
-    
+
     # if positions output dir not present, make one
     position_dir = os.path.join(out_dir, "position_dir")
     if not os.path.exists(position_dir):
         os.makedirs(position_dir)
 
-
     # set point source light
 #    set_light(0, 0, 10, 10000)
-    
+
     # create a random landscape everytime
 #    create_landscape(floor_noise, landscape_texture_dir, SURFACE_SIZE)
-    
+
     # import blueROV 3d model
-    
+
     print("Adding bluerov")
-    front_cam, bottom_cam = add_bluerov(bluerov_path, bluerov_location, front_cam_orientation=(-20, 180, 0))
+    front_cam, bottom_cam = add_bluerov(
+        bluerov_path, bluerov_location, front_cam_orientation=(-20, 180, 0))
     print("bluerov added")
-    
+
     # bpy context object
     context = bpy.context
 
     # scanner object for the rotating LiDAR
     scanner_object = context.scene.objects[front_cam]
-    
+
     bpy.context.scene.render.engine = 'CYCLES'
     bpy.context.scene.cycles.device = 'GPU'
-    
-    #bpy.context.scene.world.mist_settings.depth = 45
+
+    # bpy.context.scene.world.mist_settings.depth = 45
     bpy.context.scene.world.mist_settings.falloff = 'QUADRATIC'
 
-#    
+#
     # import oysters at some random location according to cluster size
 #    add_oyster(oysters_model_dir,oysters_texture_dir, n_clusters, min_oyster, max_oyster, 5)
-    
-    
+
     # set motion path in keyframes
     set_motion('BlueROV', motion_path)
 
@@ -202,74 +188,76 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     third_cam_z = 3
     third_cam_r = 0.34
     third_cam_p = 0
-    third_cam_yaw = 2.35 
-    third_cam,_ = set_camera(third_cam_x, third_cam_y, third_cam_z, third_cam_r, third_cam_p, third_cam_yaw, True, focal_length=100)
-    
-    
+    third_cam_yaw = 2.35
+    third_cam, _ = set_camera(third_cam_x, third_cam_y, third_cam_z,
+                              third_cam_r, third_cam_p, third_cam_yaw, True, focal_length=100)
+
     # create variables to store values
-    x_array     = []
-    y_array     = []
-    z_array     = []
-    roll_array  = []
+    x_array = []
+    y_array = []
+    z_array = []
+    roll_array = []
     pitch_array = []
-    yaw_array   = []
+    yaw_array = []
     simulated_accel = None
     simulated_gyro = None
 
     x_coordinates = None
     y_coordinates = None
     z_coordinates = None
-    distances     = None
-    intensities   = None
+    distances = None
+    intensities = None
     scene = bpy.context.scene
-    
-    ###BFAB80 HPL color
-    ####0e92b8  NBRF color
-    #### -------------------main loop----------------------
+
+    # BFAB80 HPL color
+    # 0e92b8  NBRF color
+    # -------------------main loop----------------------
     for frame_count in range(START_FRAME, END_FRAME+1, FRAME_INTERVAL):
         CURR_FRAME = frame_count
-        if set_counter > 0 : set_counter -= 1
+        if set_counter > 0:
+            set_counter -= 1
 #        TIME_TO_WAIT=3
 #        for wait_count in range(TIME_TO_WAIT):
 #            bpy.context.scene.frame_set(wait_count)
-        if(frame_count > FRAME_INTERVAL and set_counter == 0):
-            if(INPUT_MODE and len(instructions)==0):
-             i = input("~")
-             instructions.append(i)
-            if(len(instructions) > 0):
+        if (frame_count > FRAME_INTERVAL and set_counter == 0):
+            if (INPUT_MODE and len(instructions) == 0):
+                i = input("~")
+                instructions.append(i)
+            if (len(instructions) > 0):
                 try:
-                 string = ask(chat_history,instructions[0])
+                    string = ask(chat_history, instructions[0])
                 except:
-                 raise Exception("Error with API key")
+                    raise Exception("Error with API key")
                 print(string)
                 try:
-                 exec(extract_python_code(string))
+                    exec(extract_python_code(string))
                 except Exception as e:
-                 print("WARNING : Possible GPT code code block error")
-                 print(e)
-                 try:
-                     exec(string)
-                 except Exception as e:
-                     print("WARNING : GPT - Code could not be executed")
-                     print(e)
-                
+                    print("WARNING : Possible GPT code code block error")
+                    print(e)
+                    try:
+                        exec(string)
+                    except Exception as e:
+                        print("WARNING : GPT - Code could not be executed")
+                        print(e)
+
                 instructions.pop()
-        print("frame: ",frame_count)
+        print("frame: ", frame_count)
         print(get_bot_position())
         bpy.context.scene.frame_set(frame_count)
         for scene in bpy.data.scenes:
             for node in scene.node_tree.nodes:
                 if node.type == 'OUTPUT_FILE':
-                    node.base_path = os.path.join(third_cam_dir,str(frame_count)+"_masks")
+                    node.base_path = os.path.join(
+                        third_cam_dir, str(frame_count)+"_masks")
 #                    if os.path.exists(node.base_path):
 #                        print('path exists')
 #                    else:
 #                        print('path created')
 #                        os.mkdir(node.base_path)
-        
+
 
 #        x, y, z, rot_x, rot_y, rot_z = get_position('BlueROV')
-#        
+#
 #        x_array.append(x)
 #        y_array.append(y)
 #        z_array.append(z)
@@ -277,23 +265,23 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
 #        pitch_array.append(rot_y)
 #        yaw_array.append(rot_z)
 #        save_values(position_dir, POSITIONS_FILENAME, [[x], [y], [z], [rot_x], [rot_y], [rot_z]])
-#        
-#        
+#
+#
 #        if frame_count >= START_FRAME + 2:
 #            # calculate true accelerometer values
 #            true_accel = cal_linear_acc(x_array, y_array, z_array, 30)
-#           
+#
 
 #            # calculate true gyroscope values
 #            true_gyro = cal_angular_vel(roll_array, pitch_array, yaw_array, 30)
-#        
+#
 
 #            # calculate simulated accelerometer values from true values
 #            simulated_accel = acc_gen(IMU_RATE, true_accel, ACC_ERROR, ACC_VIB)
-#            
+#
 #            # calculate simulated gyroscope values from true values
 #            simulated_gyro = gyro_gen(IMU_RATE, true_gyro, GYRO_ERROR, GYRO_VIB)
-#         
+#
 
 #            # array has 3 elements in it, remove the first element
 #            x_array.pop(0)
@@ -329,16 +317,16 @@ def start_pipeline(floor_noise,landscape_texture_dir,bluerov_path,bluerov_locati
     #                        save_values(scanner_dir, SCANNER_FILENAME, data_2_write)
     #                        save_plots(scanner_dir, str(frame_count)+".png", data_2_write, [x, y, z])
     #                print("Completed Range Scanner in: ", time.time() - start)
-                
+
             # save only some frames depending on the imu rate and frame rate
-          
 
             # save RGB and DEPTH images
-        #render_img(front_cam_dir, frame_count, front_cam, save_RGB=True)
-        #render_img(third_cam_dir, frame_count, third_cam, save_RGB=True)
+        # render_img(front_cam_dir, frame_count, front_cam, save_RGB=True)
+        # render_img(third_cam_dir, frame_count, third_cam, save_RGB=True)
         render_img(bottom_cam_dir, frame_count, bottom_cam, save_RGB=True)
-        #render_img(front_cam_dir, frame_count, front_cam, save_DEPTH=True)
-        render_img(third_cam_dir, frame_count, third_cam, save_regular=True,save_RGB=False)
+        # render_img(front_cam_dir, frame_count, front_cam, save_DEPTH=True)
+        render_img(third_cam_dir, frame_count, third_cam,
+                   save_regular=True, save_RGB=False)
 
 
 def generate_circular_points(radius, center, init_angle=0.0, num_points=20):
@@ -347,7 +335,7 @@ def generate_circular_points(radius, center, init_angle=0.0, num_points=20):
     center_y = center[1]
 
     points = []
-    
+
     for theta in np.linspace(np.pi, 3*np.pi, num_points):
         x = radius * np.cos(theta) + center_x
         y = radius * np.sin(theta) + center_y
@@ -357,6 +345,7 @@ def generate_circular_points(radius, center, init_angle=0.0, num_points=20):
 
     return points
 
+
 def get_bot_position():
     """
     Get the position of BlueROV in the simulation
@@ -365,6 +354,7 @@ def get_bot_position():
         tuple: The x, y, and z coordinates of the object's position
     """
     return get_position('BlueROV')
+
 
 def get_position(object_name):
     """
@@ -380,6 +370,7 @@ def get_position(object_name):
     position = obj.location
     return (position.x, position.y, position.z)
 
+
 def set_bot_position(points):
     """
     Sets the motion of an object in the future by making the object move to a certian
@@ -394,8 +385,10 @@ def set_bot_position(points):
     """
     global set_counter
     obj = bpy.data.objects['BlueROV']
-    set_motion('BlueROV',{(CURR_FRAME + (FRAME_INTERVAL * set_counter)):[points,obj.rotation_euler]})
+    set_motion('BlueROV', {
+               (CURR_FRAME + (FRAME_INTERVAL * set_counter)): [points, obj.rotation_euler]})
     set_counter += 1
+
 
 def set_yaw(angle):
     """
@@ -410,7 +403,9 @@ def set_yaw(angle):
         None
     """
     obj = bpy.data.objects['BlueROV']
-    set_motion('BlueROV',{CURR_FRAME:[obj.location,(obj.rotation_euler[0],obj.rotation_euler[1],angle)]})
+    set_motion('BlueROV', {CURR_FRAME: [
+               obj.location, (obj.rotation_euler[0], obj.rotation_euler[1], angle)]})
+
 
 def set_pitch(angle):
     """
@@ -425,7 +420,9 @@ def set_pitch(angle):
         None
     """
     obj = bpy.data.objects['BlueROV']
-    set_motion('BlueROV',{CURR_FRAME:[obj.location,(obj.rotation_euler[0],angle,obj.rotation_euler[2])]})
+    set_motion('BlueROV', {CURR_FRAME: [
+               obj.location, (obj.rotation_euler[0], angle, obj.rotation_euler[2])]})
+
 
 def set_roll(angle):
     """
@@ -440,9 +437,11 @@ def set_roll(angle):
         None
     """
     obj = bpy.data.objects['BlueROV']
-    set_motion('BlueROV',{CURR_FRAME:[obj.location,(angle,obj.rotation_euler[1],obj.rotation_euler[2])]})
+    set_motion('BlueROV', {CURR_FRAME: [
+               obj.location, (angle, obj.rotation_euler[1], obj.rotation_euler[2])]})
 
-def put_object(object_name : str, loc : tuple, rot : tuple):
+
+def put_object(object_name: str, loc: tuple, rot: tuple):
     """
     Sets the motion of an object in the future by making the object move to a certian
     set of points.
@@ -455,28 +454,35 @@ def put_object(object_name : str, loc : tuple, rot : tuple):
     Returns:
         None
     """
-    print("Debuggg")
-    if(object_name.upper().find("OYSTER") != -1):
-        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model/' + random.choice(os.listdir('/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model'))
+    if (object_name.upper().find("OYSTER") != -1):
+        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model/' + \
+            random.choice(os.listdir(
+                '/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model'))
         print(v)
-        bpy.ops.import_mesh.stl(filepath = v)
+        bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
-        bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False, align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+        bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
+                           align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
         return
-    
-    if(object_name.upper().find("ROCK") != -1):
-        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model/' + random.choice(os.listdir('/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model'))
-        bpy.ops.import_mesh.stl(filepath = v)
+
+    if (object_name.upper().find("ROCK") != -1):
+        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model/' + \
+            random.choice(os.listdir(
+                '/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model'))
+        bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
-        bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False, align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+        bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
+                           align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
         return
-    
+
     for v in os.listdir('/Users/aadipalnitkar/Underwater-Share/data/blender_data/special_data'):
-        if(v.find(object_name) != -1):
-         path = '/Users/aadipalnitkar/Underwater-Share/data/blender_data/special_data/' + v
-         bpy.ops.import_mesh.stl(filepath = path)
-         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
-         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False, align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+        if (v.find(object_name) != -1):
+            path = '/Users/aadipalnitkar/Underwater-Share/data/blender_data/special_data/' + v
+            bpy.ops.import_mesh.stl(filepath=path)
+            bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+            bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
+                               align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+
 
 def put_bot():
     """
@@ -490,9 +496,11 @@ def put_bot():
     Returns:
         None
     """
-    add_bluerov(base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae", bluerov_location, front_cam_orientation=(-20, 180, 0))
+    add_bluerov(base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae",
+                bluerov_location, front_cam_orientation=(-20, 180, 0))
 
-def ask(chat_history,prompt):
+
+def ask(chat_history, prompt):
     chat_history.append(
         {
             "role": "user",
@@ -502,8 +510,9 @@ def ask(chat_history,prompt):
 
     headers = {"Authorization": f"Bearer {key}"}
     data = {'model': 'gpt-3.5-turbo', 'messages': chat_history}
-    poster = requests.post(url, headers=headers, json=data).json()['choices'][0]['message']
-    #print(poster['content'])
+    poster = requests.post(url, headers=headers, json=data).json()[
+        'choices'][0]['message']
+    # print(poster['content'])
 
     chat_history.append(
         {
@@ -512,6 +521,7 @@ def ask(chat_history,prompt):
         }
     )
     return poster['content']
+
 
 def extract_python_code(content):
     code_block_regex = re.compile(r"```(.*?)```", re.DOTALL)
@@ -527,120 +537,119 @@ def extract_python_code(content):
         return None
 
 
-
-def generate_motion_path(points, end_frame, object_z = 3.5, object_roll=0.0, object_pitch=0.0):
+def generate_motion_path(points, end_frame, object_z=3.5, object_roll=0.0, object_pitch=0.0):
     num_key_frames = len(points)
     motion_path = {}
     for idx, key_frame in enumerate(np.linspace(0, end_frame, num_key_frames)):
-        motion_path[key_frame] = [(points[idx][0],points[idx][1], object_z), (object_roll, object_pitch, points[idx][2])]
-    
+        motion_path[key_frame] = [
+            (points[idx][0], points[idx][1], object_z), (object_roll, object_pitch, points[idx][2])]
+
     return motion_path
-        
-    
 
 
 # ---------------------------------------------------------
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     # register range_scanner module
-    #range_scanner.register()
+    # range_scanner.register()
 
     # absolute path of the script
     script_path = os.path.dirname(os.path.abspath(__file__))
-    print("script_path:",script_path)
+    print("script_path:", script_path)
 
     # remove the last dir from path so that we are in base directory and can navigate further
     base_dir_path = script_path.split('code')[0]
-    print("base_dir_path:",base_dir_path)
-    base_dir_path  = r"/Users/aadipalnitkar/Underwater-share"
+    print("base_dir_path:", base_dir_path)
+    base_dir_path = r"/Users/aadipalnitkar/Underwater-share"
 
     try:
         # delete all previously created objects from the scene
-#        delete_objs()
-        
+        #        delete_objs()
+
         # landscape parameters
-        floor_noise =1  # seabed smoothens out as the floor_noise is increased
-        landscape_texture_dir = base_dir_path + "//data//blender_data//landscape//textures//"
-        
+        floor_noise = 1  # seabed smoothens out as the floor_noise is increased
+        landscape_texture_dir = base_dir_path + \
+            "//data//blender_data//landscape//textures//"
+
         # blueRov parameters, initial position and orientation
         bluerov_model_path = base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae"
         bluerov_location = (0, 0, 0)
         bluerov_orientation = (0, 0, 0)
-        
+
         # oysters paramteres
         oysters_model_dir = base_dir_path + "//data//blender_data//oysters//model//"
         oysters_texture_dir = base_dir_path + "//data//blender_data//oysters//textures//"
         n_clusters = 1
         min_oyster = 5
         max_oyster = None
-    
+
         # dir where all the results will be saved
         out_dir = base_dir_path + "//data//final_output_3_10_23_test//"
-        #all densities are 5 by default. z=10 as default
-        
+        # all densities are 5 by default. z=10 as default
+
 #        points = generate_circular_points(radius=17.5, center=[30, 16], init_angle=0.22-3.14, num_points=20)
-        
+
 #        motion_path = generate_motion_path(points, 17000, object_roll=1.57)
-        
+
         # bluerov motion path
         motion_path = {
             0+TIME_TO_WAIT: [bluerov_location, bluerov_orientation],
 
             2000+TIME_TO_WAIT: [(0, 0, 0),
-            (90*DEG_2_RAD, 0, 0*DEG_2_RAD)],
-            
+                                (90*DEG_2_RAD, 0, 0*DEG_2_RAD)],
+
             3000+TIME_TO_WAIT: [(16.75, 4, 1.5),
-            (90*DEG_2_RAD, 0, 60*DEG_2_RAD)],
-            
-            4000+TIME_TO_WAIT: [(20,3,1.5),
-            (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
-            
-            5000+TIME_TO_WAIT: [(23.784,7,1.5),
-            (90*DEG_2_RAD, 0, 170*DEG_2_RAD)],
-            
-            7000+TIME_TO_WAIT: [(23.13,21,1.5),
-            (90*DEG_2_RAD, 0, 180*DEG_2_RAD)],
-            
-            8000+TIME_TO_WAIT: [(27.287,24.265,1.5),
-            (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
-            
+                                (90*DEG_2_RAD, 0, 60*DEG_2_RAD)],
+
+            4000+TIME_TO_WAIT: [(20, 3, 1.5),
+                                (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
+
+            5000+TIME_TO_WAIT: [(23.784, 7, 1.5),
+                                (90*DEG_2_RAD, 0, 170*DEG_2_RAD)],
+
+            7000+TIME_TO_WAIT: [(23.13, 21, 1.5),
+                                (90*DEG_2_RAD, 0, 180*DEG_2_RAD)],
+
+            8000+TIME_TO_WAIT: [(27.287, 24.265, 1.5),
+                                (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
+
             9000+TIME_TO_WAIT: [(32.12, 21, 1.5),
-            (90*DEG_2_RAD, 0, 0*DEG_2_RAD)],
-                    
-            11000+TIME_TO_WAIT: [(35.43,7,1.5),
-            (90*DEG_2_RAD, 0, 20*DEG_2_RAD)],
-                    
-            12000+TIME_TO_WAIT: [(38,4,1.5),
-            (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
-            
-            13000+TIME_TO_WAIT: [(42,7,1.5),
-            (90*DEG_2_RAD, 0, 180*DEG_2_RAD)],
-            
-            15000+TIME_TO_WAIT: [(40,21.54,1.5),
-            (90*DEG_2_RAD, 0, 200*DEG_2_RAD)],
-            
-            16000+TIME_TO_WAIT: [(36.22,23.72,1.5),
-            (90*DEG_2_RAD, 0, 270*DEG_2_RAD)],
-            
-            18500+TIME_TO_WAIT: [(19,23.184,1.5),
-            (90*DEG_2_RAD, 0, 270*DEG_2_RAD)],
-            
-            20000+TIME_TO_WAIT: [(13.5,18.5,1.5),
-            (90*DEG_2_RAD, 0, 360*DEG_2_RAD)],
-                        }
+                                (90*DEG_2_RAD, 0, 0*DEG_2_RAD)],
+
+            11000+TIME_TO_WAIT: [(35.43, 7, 1.5),
+                                 (90*DEG_2_RAD, 0, 20*DEG_2_RAD)],
+
+            12000+TIME_TO_WAIT: [(38, 4, 1.5),
+                                 (90*DEG_2_RAD, 0, 90*DEG_2_RAD)],
+
+            13000+TIME_TO_WAIT: [(42, 7, 1.5),
+                                 (90*DEG_2_RAD, 0, 180*DEG_2_RAD)],
+
+            15000+TIME_TO_WAIT: [(40, 21.54, 1.5),
+                                 (90*DEG_2_RAD, 0, 200*DEG_2_RAD)],
+
+            16000+TIME_TO_WAIT: [(36.22, 23.72, 1.5),
+                                 (90*DEG_2_RAD, 0, 270*DEG_2_RAD)],
+
+            18500+TIME_TO_WAIT: [(19, 23.184, 1.5),
+                                 (90*DEG_2_RAD, 0, 270*DEG_2_RAD)],
+
+            20000+TIME_TO_WAIT: [(13.5, 18.5, 1.5),
+                                 (90*DEG_2_RAD, 0, 360*DEG_2_RAD)],
+        }
         print("starting pipeline")
         # start everything
-        
+
         start = time.time()
         start_pipeline(floor_noise, landscape_texture_dir,
                        bluerov_model_path, bluerov_location,
                        oysters_model_dir, oysters_texture_dir, n_clusters, min_oyster, max_oyster,
-                       out_dir, motion_path,save_imu=True, save_scanner=True)
+                       out_dir, motion_path, save_imu=True, save_scanner=True)
         print("total time: ", time.time() - start)
         print("Done - complete")
     except Exception as e:
         print(e)
 
     # unregister range_scanner module
-    #range_scanner.unregister()
+    # range_scanner.unregister()
