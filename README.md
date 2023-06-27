@@ -34,7 +34,7 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 * set_roll(angle) - Sets the roll angle for the bot.
 
 ## Getting Strated
-* First create a blender terminal to display cli output and errors via [this](https://blender.stackexchange.com/questions/265793/launch-system-console-blender-3-0). You can also create a desktop shortcut on mac if you would like.
+* First create a blender terminal to display cli output and errors like [this](https://blender.stackexchange.com/questions/265793/launch-system-console-blender-3-0). You can also create a desktop shortcut on mac if you would like.
 * Once blender is started go to File>Open and open the .blend file in the project.
 ## Common Errors
 ### Cannot install bpy on python
