@@ -1,6 +1,6 @@
 {
     "module_path": "/Users/aadipalnitkar/Underwater-share/code/",
-    "key": "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",
+    "key": "<API-KEY>",
     "url": "https://api.openai.com/v1/chat/completions",
     "input_mode": true,
     "frame_interval": 8,
