@@ -32,3 +32,20 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 * set_yaw(angle) - Sets the yaw angle for the bot.
 * set_pitch(angle) - Sets the pitch angle for the bot.
 * set_roll(angle) - Sets the roll angle for the bot.
+
+## Getting Strated
+* First create a blender terminal to display cli output and errors via (this)[https://blender.stackexchange.com/questions/265793/launch-system-console-blender-3-0]. You can also create a desktop shortcut on mac if you would like.
+* Once blender is started go to File>Open and open the .blend file in the project.
+## Common Errors
+### Cannot install bpy on python
+Each version of blender supports a corresponding version of python. Look [here](https://pypi.org/project/bpy/#description) for more info.
+### Editing modules but no changes to the project
+Go to Edit>Preferences>Paths and then go to the data subsection where you will see a scripts path. Make sure that corresponds with your working directory.
+### Module not found error on importing modules
+Blender searches through a list of paths when looking for modules to laod which you can find with ```import sys```and```print(sys.path)```. You can either place your modules on those paths or use <br> ```spec = importlib.util.spec_from_file_location("settings", "/Users/aadipalnitkar/Underwater-share/code/settings.py")
+foo = importlib.util.module_from_spec(spec)
+sys.modules["settings"] = foo
+spec.loader.exec_module(foo)
+settings : dict = foo.settings```
+### Editing files outside of blender but no changes to blender files
+You must restart blender to let the edits outside of blender take effect.
