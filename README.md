@@ -42,7 +42,8 @@ Each version of blender supports a corresponding version of python. Look [here](
 ### Editing modules but no changes to the project
 Go to Edit>Preferences>Paths and then go to the data subsection where you will see a scripts path. Make sure that corresponds with your working directory.
 ### Module not found error on importing modules
-Blender searches through a list of paths when looking for modules to laod which you can find with ```import sys```and```print(sys.path)```. You can either place your modules on those paths or use <br> ```spec = importlib.util.spec_from_file_location("settings", "/Users/aadipalnitkar/Underwater-share/code/settings.py")
+Blender searches through a list of paths when looking for modules to laod which you can find with ```import sys```and```print(sys.path)```. You can either place your modules on those paths or use <br> ```
+spec = importlib.util.spec_from_file_location("settings", "/Users/aadipalnitkar/Underwater-share/code/settings.py")
 foo = importlib.util.module_from_spec(spec)
 sys.modules["settings"] = foo
 spec.loader.exec_module(foo)
