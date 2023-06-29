@@ -44,19 +44,16 @@ Go to Edit>Preferences>Paths and then go to the data subsection where you will s
 ### Module not found error on importing modules
 Blender searches through a list of paths when looking for modules to laod which you can find with ```import sys```and```print(sys.path)```. You can either place your modules on those paths or use <br> 
 ```
-spec = importlib.util.spec_from_file_location("settings", "/Users/aadipalnitkar/Underwater-share/code/settings.py")
+spec = importlib.util.spec_from_file_location("simulate", "/Users/aadipalnitkar/Underwater-share/code/simulate.py")
 ```
 ```
-foo = importlib.util.module_from_spec(spec)
+simulate = importlib.util.module_from_spec(spec)
 ```
 ```
-sys.modules["settings"] = foo
+sys.modules["settings"] = simulate
 ```
 ```
-spec.loader.exec_module(foo)
-```
-```
-settings : dict = foo.settings
+spec.loader.exec_module(simulate)
 ```
 ### Editing files outside of blender but no changes to blender files
 You must restart blender to let the edits outside of blender take effect.
