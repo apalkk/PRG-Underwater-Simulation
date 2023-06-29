@@ -34,7 +34,9 @@ We are working under the Perceptions and Robotics Group (PRG) at UMD, to use Ope
 * set_roll(angle) - Sets the roll angle for the bot.
 
 ## Getting Strated
-* First create a blender terminal to display cli output and errors like [this](https://blender.stackexchange.com/questions/265793/launch-system-console-blender-3-0). You can also create a desktop shortcut on mac if you would like.
+* Download blender and python. Currently works on Blender 3.4.1 and Python 3.11.4.
+* [Download this](https://drive.google.com/drive/folders/1-kSRIKONjX89lnxEH12iVjAsx5-octjC?usp=share_link) and then replace the blender_data folder in the /data directory with the blender_data folder on google drive. Do the same with the .blend file and /code/underwater_scene_for_aerial_image. Note that the blender_data is not necessary to run the simulation but is necessary when adding models to the simulation.
+* Create a blender terminal to display cli output and errors like [this](https://blender.stackexchange.com/questions/265793/launch-system-console-blender-3-0). You can also create a desktop shortcut on mac if you would like.
 * Once blender is started go to File>Open and open the .blend file in the project.
 ## Common Errors
 ### Cannot install bpy on python
