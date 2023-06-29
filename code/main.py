@@ -18,7 +18,7 @@ script_directory = os.path.dirname(os.path.abspath(__file__))
 parent_directory = os.path.dirname(script_directory)
 
 # Construct the path to the parent directory
-parent_directory = os.path.dirname(script_directory)
+main__directory = os.path.dirname(parent_directory)
 
 # Construct the path to the settings.json file
 settings_file = os.path.join(parent_directory, "settings.json")
