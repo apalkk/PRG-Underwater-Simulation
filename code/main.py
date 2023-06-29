@@ -14,10 +14,10 @@ import json
 # Get the current directory of the script
 script_directory = os.path.dirname(os.path.abspath(__file__))
 
-# Construct the path to the parent directory
+# Construct the path to the /code directory
 parent_directory = os.path.dirname(script_directory)
 
-# Construct the path to the parent directory
+# Construct the path to the PRG-Underwater-Simulation directory
 main_directory = os.path.dirname(parent_directory)
 
 # Construct the path to the settings.json file
