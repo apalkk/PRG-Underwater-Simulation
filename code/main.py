@@ -456,11 +456,11 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
     Returns:
         None
     """
+    v = os.path.join(main_directory,"data","blender_data")
     if (object_name.upper().find("OYSTER") != -1):
-        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model/' + \
-            random.choice(os.listdir(
-                '/Users/aadipalnitkar/Underwater-share/data/blender_data/oysters/model'))
-        print(v)
+        v = os.path.join(v,"oysters","model")
+        rand =  random.choice(os.listdir(v))
+        v = os.path.join(v,rand)
         bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
@@ -468,23 +468,22 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
         return
 
     if (object_name.upper().find("ROCK") != -1):
-        v = '/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model/' + \
-            random.choice(os.listdir(
-                '/Users/aadipalnitkar/Underwater-share/data/blender_data/rocks/model'))
+        v = os.path.join(v,"rocks","Rock047_1K-JPG")
+        rand = random.choice(os.listdir(v))
+        v = os.path.join(v,rand)
         bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
                            align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
         return
 
-    for v in os.listdir('/Users/aadipalnitkar/Underwater-Share/data/blender_data/special_data'):
-        if (v.find(object_name) != -1):
-            path = '/Users/aadipalnitkar/Underwater-Share/data/blender_data/special_data/' + v
+    for file in os.listdir(os.path.join(v,"special_data")):
+        if (file.find(object_name) != -1):
+            path = os.path.join(v,"special_data",file)
             bpy.ops.import_mesh.stl(filepath=path)
             bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
             bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
                                align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
-
 
 def put_bot():
     """
