@@ -17,6 +17,9 @@ script_directory = os.path.dirname(os.path.abspath(__file__))
 # Construct the path to the parent directory
 parent_directory = os.path.dirname(script_directory)
 
+# Construct the path to the parent directory
+parent_directory = os.path.dirname(script_directory)
+
 # Construct the path to the settings.json file
 settings_file = os.path.join(parent_directory, "settings.json")
 
@@ -560,7 +563,7 @@ if __name__ == "__main__":
     # remove the last dir from path so that we are in base directory and can navigate further
     base_dir_path = script_path.split('code')[0]
     print("base_dir_path:", base_dir_path)
-    base_dir_path = r"/Users/aadipalnitkar/Underwater-share"
+    base_dir_path = r"" + main_directory
 
     try:
         # delete all previously created objects from the scene
