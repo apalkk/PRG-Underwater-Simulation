@@ -50,7 +50,7 @@ spec = importlib.util.spec_from_file_location("simulate", "/Users/aadipalnitkar/
 simulate = importlib.util.module_from_spec(spec)
 ```
 ```
-sys.modules["settings"] = simulate
+sys.modules["simulate"] = simulate
 ```
 ```
 spec.loader.exec_module(simulate)
