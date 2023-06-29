@@ -1,10 +1,13 @@
 {
     "module_path": "/Users/aadipalnitkar/Underwater-share/code/",
-    "key": "<API-KEY>",
+    "key": "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",
     "url": "https://api.openai.com/v1/chat/completions",
+    // If input mode is false, no live input will be taken from the user as the simulation is running only pre-programmed instructions will run.
     "input_mode": true,
     "frame_interval": 8,
     "last_frame": 1000,
+    // Waiting time before the program starts.
     "wait_time": 0,
+    // Pre-programmed instructions which will be executed before live input is taken.
     "instructions": []
 }
