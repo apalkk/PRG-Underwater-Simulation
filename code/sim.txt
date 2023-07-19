@@ -21,7 +21,7 @@ set_pitch(angle): Set the pitch angle of the drone (in degrees).
 
 set_roll(angle): Set the roll angle of the drone (in degrees).
 
-put_object(name,(x,y,z),(yaw,pitch,roll)): Adds objects to the simulation by taking in the name of the object you want to add along with the x,y,z coordinates as one tuple and yaw,pitch and roll as the second one. It only executes if a match has been found.
+put_object(name,(x,y,z),(yaw,pitch,roll)): Adds objects to the simulation by taking in the name of the object you want to add along with the x,y,z coordinates as one tuple and yaw,pitch and roll as the second one. It only executes if a match has been found. To add oysetrs pass in 'oyster' or for rocks pass 'rock' as a parameter.
 
 In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
 
