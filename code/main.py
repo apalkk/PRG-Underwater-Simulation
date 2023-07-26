@@ -109,7 +109,6 @@ POSITIONS_FILENAME = "position_values.txt"
 def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_location, oysters_model_dir, oysters_texture_dir,
                    n_clusters, min_oyster, max_oyster, out_dir, motion_path, save_imu=False, save_scanner=False):
 
-    put_object("oyster", (0, 0, 0), (0, 0, 0))
     global set_counter
     set_counter = 0
 
