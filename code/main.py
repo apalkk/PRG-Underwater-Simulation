@@ -455,15 +455,19 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
     Returns:
         None
     """
-    v = os.path.join(main_directory,"data","blender_data")
+    v = os.path.join(main_directory, "data", "blender_data")
     if (object_name.upper().find("OYSTER") != -1):
-        v = os.path.join(v,"oysters","model")
-        rand =  random.choice(os.listdir(v))
-        v = os.path.join(v,rand)
+        v = os.path.join(v, "oysters", "model")
+        rand = random.choice(os.listdir(v))
+        v = os.path.join(v, rand)
         bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+        # Get the newly imported object
+        new_object = bpy.context.active_object
+        new_object.scale = (0.1, 0.1, 0.1)
+        
         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
-                           align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+                           align='WORLD', location=loc, rotation=rot, scale=(0.1, 0.1, 0.1))
         return
 
     if (object_name.upper().find("ROCK") != -1):
@@ -473,7 +477,7 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
         bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
-                           align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+                           align='WORLD', location=loc, rotation=rot, scale=(0.1, 0.1, 0.1))
         return
 
     for file in os.listdir(os.path.join(v,"special_data")):
@@ -482,7 +486,7 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
             bpy.ops.import_mesh.stl(filepath=path)
             bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
             bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
-                               align='WORLD', location=loc, rotation=rot, scale=(0.0, 0.0, 0.0))
+                               align='WORLD', location=loc, rotation=rot, scale=(1, 1, 1))
 
 def put_bot():
     """
