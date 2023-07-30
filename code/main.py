@@ -14,10 +14,10 @@ import json
 # Get the current directory of the script
 script_directory = os.path.dirname(os.path.abspath(__file__))
 
-# Construct the path to the /code directory
+# Construct the path to the parent directory
 parent_directory = os.path.dirname(script_directory)
 
-# Construct the path to the PRG-Underwater-Simulation directory
+# Construct the path to the parent directory
 main_directory = os.path.dirname(parent_directory)
 
 # Construct the path to the settings.json file
@@ -26,24 +26,25 @@ settings_file = os.path.join(parent_directory, "settings.json")
 with open(settings_file, 'r') as file:
      settings = json.load(file)
 
+print(os.path.join(main_directory, "/oysters/model"))
+
 path = r''+parent_directory
 if path not in sys.path:
     sys.path.append(path)
+print(script_directory)
 
-from simulate import set_motion
+spec = importlib.util.spec_from_file_location(
+    "Simulate", "/Users/aadipalnitkar/Underwater-share/code/simulate.py")
+foo = importlib.util.module_from_spec(spec)
+sys.modules["Simulate"] = foo
+spec.loader.exec_module(foo)
+
+from Simulate import set_motion
 from RangeScanner import run_scanner, tupleToArray
 from ImuUtils import cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
 from Utils import get_position, render_img, save_values
 from CreateScene import delete_objs, create_landscape, add_bluerov, add_oyster, set_camera, set_light
 
-# Local Imports:
-
-# spec = importlib.util.spec_from_file_location("settings", "/Users/aadipalnitkar/Underwater-share/code/settings.py")
-# foo = importlib.util.module_from_spec(spec)
-# sys.modules["settings"] = foo
-# spec.loader.exec_module(foo)
-# settings : dict = foo.settings
-# print(sys.path)
 
 key = settings["key"]
 url = settings["url"]
@@ -105,10 +106,15 @@ SCANNER_FILENAME = "scanner_values.txt"
 # range scanner output file name
 POSITIONS_FILENAME = "position_values.txt"
 
+added_objs = []
 
 def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_location, oysters_model_dir, oysters_texture_dir,
                    n_clusters, min_oyster, max_oyster, out_dir, motion_path, save_imu=False, save_scanner=False):
 
+    bpy.ops.import_mesh.stl(filepath=bluerov_path)
+    bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+    bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
+                           align='WORLD', location=(0, 100, 0), rotation=(0, 0, 0), scale=(0.0, 0.0, 0.0))
     global set_counter
     set_counter = 0
 
@@ -244,6 +250,7 @@ def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_loc
                 instructions.pop()
         print("frame: ", frame_count)
         print(get_bot_position())
+        print(get_bot_euler())
         bpy.context.scene.frame_set(frame_count)
         for scene in bpy.data.scenes:
             for node in scene.node_tree.nodes:
@@ -325,7 +332,7 @@ def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_loc
         # render_img(front_cam_dir, frame_count, front_cam, save_RGB=True)
         # render_img(third_cam_dir, frame_count, third_cam, save_RGB=True)
         render_img(bottom_cam_dir, frame_count, bottom_cam, save_RGB=True)
-        # render_img(front_cam_dir, frame_count, front_cam, save_DEPTH=True)
+        render_img(front_cam_dir, frame_count, front_cam, save_DEPTH=True)
         render_img(third_cam_dir, frame_count, third_cam,
                    save_regular=True, save_RGB=False)
 
@@ -403,9 +410,10 @@ def set_yaw(angle):
     Returns:
         None
     """
+
     obj = bpy.data.objects['BlueROV']
     set_motion('BlueROV', {CURR_FRAME: [
-               obj.location, (obj.rotation_euler[0], obj.rotation_euler[1], angle)]})
+               obj.location, (obj.rotation_euler[0], obj.rotation_euler[1], angle * DEG_2_RAD)]})
 
 
 def set_pitch(angle):
@@ -422,7 +430,7 @@ def set_pitch(angle):
     """
     obj = bpy.data.objects['BlueROV']
     set_motion('BlueROV', {CURR_FRAME: [
-               obj.location, (obj.rotation_euler[0], angle, obj.rotation_euler[2])]})
+               obj.location, (obj.rotation_euler[0], angle * DEG_2_RAD, obj.rotation_euler[2])]})
 
 
 def set_roll(angle):
@@ -439,7 +447,7 @@ def set_roll(angle):
     """
     obj = bpy.data.objects['BlueROV']
     set_motion('BlueROV', {CURR_FRAME: [
-               obj.location, (angle, obj.rotation_euler[1], obj.rotation_euler[2])]})
+               obj.location, (angle * DEG_2_RAD, obj.rotation_euler[1], obj.rotation_euler[2])]})
 
 
 def put_object(object_name: str, loc: tuple, rot: tuple):
@@ -467,7 +475,7 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
         new_object.scale = (0.1, 0.1, 0.1)
         
         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
-                           align='WORLD', location=loc, rotation=rot, scale=(0.1, 0.1, 0.1))
+                           align='WORLD', location=loc, rotation=rot)
         return
 
     if (object_name.upper().find("ROCK") != -1):
@@ -476,8 +484,12 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
         v = os.path.join(v,rand)
         bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+        # Get the newly imported object
+        new_object = bpy.context.active_object
+        new_object.scale = (0.1, 0.1, 0.1)
+
         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
-                           align='WORLD', location=loc, rotation=rot, scale=(0.1, 0.1, 0.1))
+                           align='WORLD', location=loc, rotation=rot)
         return
 
     for file in os.listdir(os.path.join(v,"special_data")):
@@ -485,23 +497,39 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
             path = os.path.join(v,"special_data",file)
             bpy.ops.import_mesh.stl(filepath=path)
             bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
+            new_object = bpy.context.active_object
+            new_object.scale = (1, 1, 1)
+
             bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
-                               align='WORLD', location=loc, rotation=rot, scale=(1, 1, 1))
+                               align='WORLD', location=loc, rotation=rot)
 
-def put_bot():
-    """
-    Sets the motion of an object in the future by making the object move to a certian
-    set of points.
+def delete_objects_in_range(c_min, c_max, c_coord: str, o_min = 1000000, o_max=1000000, o_coord: str = '?'):
+    c_coord = c_coord.upper()
+    o_coord = o_coord.upper()
+    if(c_coord == o_coord):
+        return
 
-    Args:
-        object_name (str): The name of the object
-        points (tuple): The x, y, and z components of the object's motion
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH':
 
-    Returns:
-        None
-    """
-    add_bluerov(base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae",
-                bluerov_location, front_cam_orientation=(-20, 180, 0))
+            if(c_coord == 'X'):
+             c = obj.location.x
+            elif(c_coord == 'Y'):
+             c = obj.location.y
+            else:
+             c = obj.location.z
+
+            if(o_coord == 'X'):
+             o = obj.location.x
+            elif(o_coord == 'Y'):
+             o = obj.location.y
+            else:
+             o = obj.location.z
+            
+            if c_min <= c <= c_max and o_min < o < o_max:
+                bpy.context.collection.objects.unlink(obj)
+                bpy.data.objects.remove(obj)
+
 
 
 def ask(chat_history, prompt):
@@ -526,6 +554,10 @@ def ask(chat_history, prompt):
     )
     return poster['content']
 
+def find(name, path):
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
 
 def extract_python_code(content):
     code_block_regex = re.compile(r"```(.*?)```", re.DOTALL)
@@ -539,6 +571,20 @@ def extract_python_code(content):
         return full_code
     else:
         return None
+
+def get_bot_euler():
+    """
+    Get the current position of an object in the simulation
+
+    Args:
+        object_name (str): The name of the object
+
+    Returns:
+        tuple: The x, y, and z coordinates of the object's position
+    """
+    obj = bpy.data.objects['BlueROV']
+    position = obj.rotation_euler
+    return ((position[0]/DEG_2_RAD) % 360, (position[1]/DEG_2_RAD) % 360, (position[2]/DEG_2_RAD) % 360)
 
 
 def generate_motion_path(points, end_frame, object_z=3.5, object_roll=0.0, object_pitch=0.0):
@@ -579,7 +625,7 @@ if __name__ == "__main__":
         # blueRov parameters, initial position and orientation
         bluerov_model_path = base_dir_path + "//data//blender_data//blueROV//BlueRov2.dae"
         bluerov_location = (0, 0, 0)
-        bluerov_orientation = (0, 0, 0)
+        bluerov_orientation = (90*DEG_2_RAD, 0, 0)
 
         # oysters paramteres
         oysters_model_dir = base_dir_path + "//data//blender_data//oysters//model//"
