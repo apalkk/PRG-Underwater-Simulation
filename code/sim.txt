@@ -23,6 +23,10 @@ set_roll(angle): Set the roll angle of the drone (in degrees).
 
 put_object(name,(x,y,z),(yaw,pitch,roll)): Adds objects to the simulation by taking in the name of the object you want to add along with the x,y,z coordinates as one tuple and yaw,pitch and roll as the second one. It only executes if a match has been found. To add oysetrs pass in 'oyster' or for rocks pass 'rock' as a parameter.
 
-In terms of axis conventions, forward means positive X axis. Right means positive Y axis. Up means positive Z axis.
+put_bot_switch(coordinates): Adds a non agent bluerov to the specified coordinates. The coordinates are x,y,z in the form of a tuple. Switches control to the new blurov but keeps perspective on the old one.
+
+delete_objects_in_range(c_min,c_max,c_coord,o_min,o_max,o_coord): Deletes objects within certain coordinate ranges. c_min and c_max represent coordinated values. The axis will be spcified by c_coord. The same applies to o_min, o_max and o_coord. Passing in (-2,2,'X',0,5,'Y') will delete all objects where their X coordinate is between -2 and 2 and their Y coordinate is between 0 and 5. You can also simply pass in o_min, o_max and o_coord as the o_min,o_max,o_coord are optional. For example to delete all objects in the shape of a square around the origin you can use delete_objects_in_range(-5,5,'X',-5,5,'Y')
+
+In terms of axis conventions the z axis is vertical and the positive z-axis points upward the x and y axes lie flat on the ground.
 
 Are you ready?
