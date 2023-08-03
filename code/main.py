@@ -472,7 +472,7 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
         # Get the newly imported object
         new_object = bpy.context.active_object
-        new_object.scale = (0.1, 0.1, 0.1)
+        new_object.scale = (0.01, 0.01, 0.01)
         
         bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
                            align='WORLD', location=loc, rotation=rot)
