@@ -110,7 +110,7 @@ added_objs = []
 
 def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_location, oysters_model_dir, oysters_texture_dir,
                    n_clusters, min_oyster, max_oyster, out_dir, motion_path, save_imu=False, save_scanner=False):
-
+                       
     bpy.ops.import_mesh.stl(filepath=bluerov_path)
     bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
     bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
@@ -450,7 +450,7 @@ def set_roll(angle):
                obj.location, (angle * DEG_2_RAD, obj.rotation_euler[1], obj.rotation_euler[2])]})
 
 
-def put_object(object_name: str, loc: tuple, rot: tuple):
+def put_object(object_name: str, loc: tuple, rot_: tuple):
     """
     Sets the motion of an object in the future by making the object move to a certian
     set of points.
@@ -463,21 +463,27 @@ def put_object(object_name: str, loc: tuple, rot: tuple):
     Returns:
         None
     """
+    rot = ((rot_[0]*DEG_2_RAD) % 360,(rot_[1]*DEG_2_RAD) % 360,(rot_[2]*DEG_2_RAD) % 360)
+
     v = os.path.join(main_directory, "data", "blender_data")
     if (object_name.upper().find("OYSTER") != -1):
         v = os.path.join(v, "oysters", "model")
         rand = random.choice(os.listdir(v))
         v = os.path.join(v, rand)
+        # Import the object from the specified filepath
         bpy.ops.import_mesh.stl(filepath=v)
         bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
-        # Get the newly imported object
-        new_object = bpy.context.active_object
-        new_object.scale = (0.01, 0.01, 0.01)
-        
-        bpy.ops.object.add(radius=1.0, type='EMPTY', enter_editmode=False,
-                           align='WORLD', location=loc, rotation=rot)
-        return
 
+        # Move the object to (0, 0, 0)
+        bpy.context.active_object.location = loc
+
+        # Scale the object
+        bpy.context.active_object.scale = (0.01,0.01,0.01)
+        
+        # Rotating the obejct
+        bpy.context.active_object.rotation_euler = rot
+        
+        return
     if (object_name.upper().find("ROCK") != -1):
         v = os.path.join(v,"rocks","Rock047_1K-JPG")
         rand = random.choice(os.listdir(v))
