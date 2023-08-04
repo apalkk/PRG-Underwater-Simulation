@@ -33,11 +33,11 @@ if path not in sys.path:
     sys.path.append(path)
 print(script_directory)
 
-spec = importlib.util.spec_from_file_location(
-    "Simulate", "/Users/aadipalnitkar/Underwater-share/code/simulate.py")
-foo = importlib.util.module_from_spec(spec)
-sys.modules["Simulate"] = foo
-spec.loader.exec_module(foo)
+#spec = importlib.util.spec_from_file_location(
+#    "Simulate", "/Users/aadipalnitkar/Underwater-share/code/simulate.py")
+#foo = importlib.util.module_from_spec(spec)
+#sys.modules["Simulate"] = foo
+#spec.loader.exec_module(foo)
 
 from Simulate import set_motion
 from RangeScanner import run_scanner, tupleToArray
@@ -515,8 +515,8 @@ def delete_objects_in_range(c_min, c_max, c_coord: str, o_min = 1000000, o_max=1
     if(c_coord == o_coord):
         return
 
-    for obj in bpy.context.scene.objects:
-        if obj.type == 'MESH':
+    for obj in bpy.context.scene.objects: 
+        if obj.type == 'MESH' and check_name(obj.name):
 
             if(c_coord == 'X'):
              c = obj.location.x
@@ -533,10 +533,27 @@ def delete_objects_in_range(c_min, c_max, c_coord: str, o_min = 1000000, o_max=1
              o = obj.location.z
             
             if c_min <= c <= c_max and o_min < o < o_max:
-                bpy.context.collection.objects.unlink(obj)
-                bpy.data.objects.remove(obj)
+                #bpy.context.collection.objects.unlink(obj)
+                #print(obj.name)
+                bpy.data.objects.remove(obj,do_unlink=True)
 
+def check(x):
+    if(abs(x[0]-get_bot_position()[0]) < 1):
+        return False
+    if(abs(x[1]-get_bot_position()[1]) < 1):
+        return False
+    if(abs(x[2]-get_bot_position()[2]) < 1):
+        return False
+    else:
+        return True
 
+def check_name(name :str):
+    if(name in ["BlueROV","BlueROV2"]):
+        return False
+    if(name.startswith("Untite")):
+        return False
+    else:
+        return True
 
 def ask(chat_history, prompt):
     chat_history.append(
