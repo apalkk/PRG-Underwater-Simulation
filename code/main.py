@@ -26,12 +26,12 @@ settings_file = os.path.join(parent_directory, "settings.json")
 with open(settings_file, 'r') as file:
      settings = json.load(file)
 
-print(os.path.join(main_directory, "/oysters/model"))
+#print(os.path.join(main_directory, "/oysters/model"))
 
 path = r''+parent_directory
 if path not in sys.path:
     sys.path.append(path)
-print(script_directory)
+#print(script_directory)
 
 #spec = importlib.util.spec_from_file_location(
 #    "Simulate", "/Users/aadipalnitkar/Underwater-share/code/simulate.py")
