@@ -12,7 +12,6 @@ import pickle
 
 from pyhocon import ConfigFactory
 import pyhocon.converter as cvt
-import argparse
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 
