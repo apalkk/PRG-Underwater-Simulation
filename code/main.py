@@ -1,3 +1,41 @@
+import sys
+import subprocess
+import os
+import bpy
+import pkgutil
+
+# Get the path to the Python interpreter used by Blender
+python_path = sys.executable
+
+# Determine the script directory
+script_directory = os.path.dirname(bpy.data.filepath)
+
+# Create a folder for packages
+packages_directory = os.path.join(script_directory, "packages")
+os.makedirs(packages_directory, exist_ok=True)
+
+# Print the path
+print("Blender's Python path:", python_path)
+
+# Ensure pip is installed
+subprocess.run([python_path, "-m", "ensurepip"])
+
+
+# Check if the required packages are installed
+required_packages = ["trimesh"]
+
+installed_packages = {pkg.name for pkg in pkgutil.iter_modules()}
+
+for package in required_packages:
+    if package not in installed_packages:
+        # Install the required package in the created folder
+        subprocess.run([python_path, "-m", "pip", "install", "--target=" + packages_directory, package])
+    else:
+        print(f"{package} is already installed")
+
+# Add the folder to the Python import path
+sys.path.append(packages_directory)
+
 import random
 import bpy
 import numpy as np
