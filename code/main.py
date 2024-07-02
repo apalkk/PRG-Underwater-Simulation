@@ -255,6 +255,10 @@ def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_loc
     intensities = None
     scene = bpy.context.scene
 
+    print("Entering sonar")
+    generate_sonar_image_data("/Users/aadipalnitkar/PRG-Underwater-Simulation/code/scene.obj", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code/cameras_sphere.npz", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code", 1, 1, 1)
+    print("Exiting sonar")
+
     # BFAB80 HPL color
     # 0e92b8  NBRF color
     # -------------------main loop----------------------
