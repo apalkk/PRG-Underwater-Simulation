@@ -40,6 +40,7 @@ if path not in sys.path:
 #spec.loader.exec_module(foo)
 
 from Simulate import set_motion
+from Sonar import *
 from RangeScanner import run_scanner, tupleToArray
 from ImuUtils import cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
 from Utils import get_position, render_img, save_values
