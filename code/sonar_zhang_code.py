@@ -161,7 +161,7 @@ def generate_sonar_image_data_from_args(args):
     render_sonar_images(train_data_path, cam_info, out_dir, gt_mesh_path)
 
 
-def as_mesh(scene_or_mesh):
+def as_mesh(scene_or_mesh, file_path=None):
     """
     Convert a possible scene to a mesh.
 
@@ -178,6 +178,10 @@ def as_mesh(scene_or_mesh):
     else:
         assert (isinstance(scene_or_mesh, trimesh.Trimesh))
         mesh = scene_or_mesh
+
+    if mesh is not None and file_path is not None:
+        mesh.export(file_path)
+        
     return mesh
 
 
