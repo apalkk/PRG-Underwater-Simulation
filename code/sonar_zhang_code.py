@@ -317,6 +317,29 @@ def get_visible_points(mesh, pose):
     distances = np.linalg.norm(locations_matched - mesh.vertices, axis=1)
     visible_points = locations_matched[distances < 1e-6]
     return visible_points
+    
+def export_npz():
+    cam = bpy.data.objects["Camera.024"].data
+    scene = bpy.context.scene
+    f_in_mm = cam.lens
+    sensor_width_in_mm = cam.sensor_width
+    w = scene.render.resolution_x
+    h = scene.render.resolution_y
+    pixel_aspect = scene.render.pixel_aspect_y / scene.render.pixel_aspect_x
+    f_x = f_in_mm / sensor_width_in_mm * w
+    f_y = f_x * pixel_aspect
+    c_x = w * (0.5 - cam.shift_x)
+    c_y = h * 0.5 + w * cam.shift_y
+    cam_mat = [[f_x, 0, c_x, 0], [0, f_y, c_y, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    cam_inv = np.linalg.inv(cam_mat)
+    object_name = "BlueROV"
+    obj = bpy.data.objects[object_name]
+    world_mat = obj.matrix_world
+    world_mat_inv = np.linalg.inv(world_mat)
+    scale_mat = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    file_path = "placeholderpath.npz"
+    np.savez(file_path, cam_mat=cam_mat, camera_mat_inv=cam_inv,
+             world_mat=world_mat, world_mat_inv=world_mat_inv, scale_mat=scale_mat)
 
 
 if __name__ == "__main__":
