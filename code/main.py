@@ -22,7 +22,7 @@ subprocess.run([python_path, "-m", "ensurepip"])
 
 
 # Check if the required packages are installed
-required_packages = ["trimesh"]
+required_packages = ["trimesh, torch, plotly, numpy, pickle, pyhocon"]
 
 installed_packages = {pkg.name for pkg in pkgutil.iter_modules()}
 
