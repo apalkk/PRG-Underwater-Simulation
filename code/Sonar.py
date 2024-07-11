@@ -282,20 +282,25 @@ def get_visible_points(mesh, pose):
 def export_npz(camera_name, file_path, object_name="BlueROV"):
     cam = bpy.data.objects[camera_name].data #  "Camera.024"
     scene = bpy.context.scene
-    f_in_mm = cam.lens
-    sensor_width_in_mm = cam.sensor_width
-    w = scene.render.resolution_x
-    h = scene.render.resolution_y
-    pixel_aspect = scene.render.pixel_aspect_y / scene.render.pixel_aspect_x
-    f_x = f_in_mm / sensor_width_in_mm * w
-    f_y = f_x * pixel_aspect
-    c_x = w * (0.5 - cam.shift_x)
-    c_y = h * 0.5 + w * cam.shift_y
-    cam_mat = [[f_x, 0, c_x, 0], [0, f_y, c_y, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-    cam_inv = np.linalg.inv(cam_mat)
+    f_in_mm = np.float32(cam.lens)
+    sensor_width_in_mm = np.float32(cam.sensor_width)
+    w = np.float32(scene.render.resolution_x)
+    h = np.float32(scene.render.resolution_y)
+    pixel_aspect = np.float32(scene.render.pixel_aspect_y / scene.render.pixel_aspect_x)
+    f_x = np.float32(f_in_mm / sensor_width_in_mm * w)
+    f_y = np.float32(f_x * pixel_aspect)
+    c_x = np.float32(w * (0.5 - cam.shift_x))
+    c_y = np.float32(h * 0.5 + w * cam.shift_y)
+    cam_mat = np.array([
+        [f_x, 0, c_x, 0],
+        [0, f_y, c_y, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ], dtype=np.float32)
+    cam_inv = np.linalg.inv(cam_mat).astype(np.float32)
     obj = bpy.data.objects[object_name]
-    world_mat = obj.matrix_world
-    world_mat_inv = np.linalg.inv(world_mat)
-    scale_mat = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    world_mat = np.array(obj.matrix_world, dtype=np.float32)
+    world_mat_inv = np.linalg.inv(world_mat).astype(np.float32)
+    scale_mat = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float32)
     np.savez(file_path, cam_mat=cam_mat, camera_mat_inv=cam_inv,
              world_mat=world_mat, world_mat_inv=world_mat_inv, scale_mat=scale_mat)
