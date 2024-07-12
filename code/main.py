@@ -22,7 +22,7 @@ subprocess.run([python_path, "-m", "ensurepip"])
 
 
 # Check if the required packages are installed
-required_packages = ["trimesh, torch, plotly, numpy, pickle, pyhocon"]
+# required_packages = ["trimesh, torch, plotly, numpy, pickle, pyhocon"]
 
 installed_packages = {pkg.name for pkg in pkgutil.iter_modules()}
 
@@ -255,9 +255,9 @@ def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_loc
     intensities = None
     scene = bpy.context.scene
 
-    print("Entering sonar")
-    generate_sonar_image_data("/Users/aadipalnitkar/PRG-Underwater-Simulation/code/scene.obj", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code/cameras_sphere.npz", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code", 1, 1, 1)
-    print("Exiting sonar")
+    # print("Entering sonar")
+    # generate_sonar_image_data("/Users/aadipalnitkar/PRG-Underwater-Simulation/code/scene.obj", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code/cameras_sphere.npz", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code", 1, 1, 1)
+    # print("Exiting sonar")
 
     # BFAB80 HPL color
     # 0e92b8  NBRF color
