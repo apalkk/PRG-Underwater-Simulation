@@ -331,4 +331,4 @@ def export_npz(camera_name, file_path, object_name="BlueROV"):
     scale_factor = scale_camera_centers(np.array[[x, y, z]])
     scale_mat = np.array([[scale_factor, 0, 0, 0], [0, scale_factor, 0, 0], [0, 0, scale_factor, 0], [0, 0, 0, 0]], dtype=np.float32)
     np.savez(file_path, cam_mat=cam_mat, camera_mat_inv=cam_inv,
-             world_mat=world_mat, world_mat_inv=world_mat_inv, scale_mat=scale_mat)
+             world_mat=world_mat, world_mat_inv=world_mat_inv, scale_mat_0=scale_mat)
