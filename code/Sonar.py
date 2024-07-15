@@ -301,6 +301,7 @@ def scale_camera_centers(camera_centers):
 
     # Calculate the global scale
     scale_factor = 3 / (Rmax * 1.1)
+    return scale_factor
 
     
 def export_npz(camera_name, file_path, object_name="BlueROV"):
