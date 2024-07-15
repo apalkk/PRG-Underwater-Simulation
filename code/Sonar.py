@@ -323,10 +323,12 @@ def export_npz(camera_name, file_path, object_name="BlueROV"):
         [0, 0, 0, 1]
     ], dtype=np.float32)
     cam_inv = np.linalg.inv(cam_mat).astype(np.float32)
+    location = cam.location
+    x, y, z = location.x, location.y, location.z
     obj = bpy.data.objects[object_name]
     world_mat = np.array(obj.matrix_world, dtype=np.float32)
     world_mat_inv = np.linalg.inv(world_mat).astype(np.float32)
-    scale_factor = scale_camera_centers(cam_mat)
-    scale_mat = np.array([[scale_factor, 0, 0, 0], [0, scale_factor, 0, 0], [0, 0, scale_factor, 0], [0, 0, 0, scale_factor]], dtype=np.float32)
+    scale_factor = scale_camera_centers(np.array[[x, y, z]])
+    scale_mat = np.array([[scale_factor, 0, 0, 0], [0, scale_factor, 0, 0], [0, 0, scale_factor, 0], [0, 0, 0, 0]], dtype=np.float32)
     np.savez(file_path, cam_mat=cam_mat, camera_mat_inv=cam_inv,
              world_mat=world_mat, world_mat_inv=world_mat_inv, scale_mat=scale_mat)
