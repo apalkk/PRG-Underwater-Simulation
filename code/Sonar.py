@@ -305,7 +305,9 @@ def scale_camera_centers(camera_centers):
 
     
 def export_npz(camera_name, file_path, object_name="BlueROV"):
-    cam = bpy.data.objects[camera_name].data #  "Camera.024"
+    cam = bpy.data.objects[camera_name] #  "Camera.024"
+    location = cam.location
+    cam = cam.data
     scene = bpy.context.scene
     f_in_mm = np.float32(cam.lens)
     sensor_width_in_mm = np.float32(cam.sensor_width)
@@ -323,7 +325,6 @@ def export_npz(camera_name, file_path, object_name="BlueROV"):
         [0, 0, 0, 1]
     ], dtype=np.float32)
     cam_inv = np.linalg.inv(cam_mat).astype(np.float32)
-    location = cam.location
     x, y, z = location.x, location.y, location.z
     obj = bpy.data.objects[object_name]
     world_mat = np.array(obj.matrix_world, dtype=np.float32)
