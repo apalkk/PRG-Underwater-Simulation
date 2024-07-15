@@ -278,6 +278,30 @@ def get_visible_points(mesh, pose):
     distances = np.linalg.norm(locations_matched - mesh.vertices, axis=1)
     visible_points = locations_matched[distances < 1e-6]
     return visible_points
+
+def scale_camera_centers(camera_centers):
+    """
+    Scale camera centers so they all lie within a sphere of radius 3 centered at the origin.
+
+    Parameters:
+    camera_centers (numpy.ndarray): An array of shape (N, 3) where N is the number of camera centers.
+
+    Returns:
+    numpy.ndarray: The scaled camera centers.
+    """
+
+    # Calculate the norm of each camera center
+    norms = np.linalg.norm(camera_centers, axis=1)
+
+    print(norms)
+
+    # Find the maximal norm (Rmax)
+    Rmax = np.max(norms)
+    print(f"Maximal norm (Rmax): {Rmax}")
+
+    # Calculate the global scale
+    scale_factor = 3 / (Rmax * 1.1)
+
     
 def export_npz(camera_name, file_path, object_name="BlueROV"):
     cam = bpy.data.objects[camera_name].data #  "Camera.024"
@@ -301,6 +325,7 @@ def export_npz(camera_name, file_path, object_name="BlueROV"):
     obj = bpy.data.objects[object_name]
     world_mat = np.array(obj.matrix_world, dtype=np.float32)
     world_mat_inv = np.linalg.inv(world_mat).astype(np.float32)
-    scale_mat = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float32)
+    scale_factor = scale_camera_centers(cam_mat)
+    scale_mat = np.array([[scale_factor, 0, 0, 0], [0, scale_factor, 0, 0], [0, 0, scale_factor, 0], [0, 0, 0, scale_factor]], dtype=np.float32)
     np.savez(file_path, cam_mat=cam_mat, camera_mat_inv=cam_inv,
              world_mat=world_mat, world_mat_inv=world_mat_inv, scale_mat=scale_mat)
