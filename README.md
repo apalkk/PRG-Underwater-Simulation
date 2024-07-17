@@ -46,13 +46,13 @@ Go to Edit>Preferences>Paths and then go to the data subsection where you will s
 ### Module not found error on importing modules
 Blender searches through a list of paths when looking for modules to laod which you can find with ```import sys```and```print(sys.path)```. You can either place your modules on those paths or use <br> 
 ```
-spec = importlib.util.spec_from_file_location("simulate", "/Users/aadipalnitkar/Underwater-share/code/simulate.py")
+spec = importlib.util.spec_from_file_location("Simulate", "/Users/aadipalnitkar/Underwater-share/code/Simulate.py")
 ```
 ```
 simulate = importlib.util.module_from_spec(spec)
 ```
 ```
-sys.modules["simulate"] = simulate
+sys.modules["Simulate"] = Simulate
 ```
 ```
 spec.loader.exec_module(simulate)
