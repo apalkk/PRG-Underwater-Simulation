@@ -84,7 +84,7 @@ def render_sonar_image(pose, cam_info, mesh):
     return render_rt
 
 # Function to get the camera pose matrix as a float32 torch tensor
-def get_camera_pose_matrix(scene, angle):
+def get_camera_pose_matrix(scene, angle, camera_translation):
     camera_rotation = rotation_matrix(angle, [0, 0, 1])
     camera_transform = concatenate_matrices(camera_translation, camera_rotation)
     scene.camera.transform = camera_transform
@@ -95,7 +95,7 @@ def get_camera_pose_matrix(scene, angle):
     pose_tensor = torch.tensor(pose_matrix, dtype=torch.float32)
     return pose_tensor
 
-def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXXobj"):
+def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXX.obj"):
     # Example mesh path (replace with your actual mesh file)
     mesh = load_and_scale_mesh(export_to_obj(mesh_path))
     
@@ -127,7 +127,7 @@ def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXX
 
     # Get the pose matrix at a specific angle (e.g., 0 radians)
     angle = 0
-    pose_matrix = get_camera_pose_matrix(scene, angle)
+    pose_matrix = get_camera_pose_matrix(scene, angle, camera_translation)
     
     # Print the pose matrix
     print("Camera Pose Matrix:\n", pose_matrix)
