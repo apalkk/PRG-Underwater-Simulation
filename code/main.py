@@ -47,7 +47,7 @@ def installModule(packageName):
         subprocess.call([python_exe, "-m", "pip", "install", packageName])
 # Should definitely work for mac, windows need to be checked according to repo ---
 
-required_packages = ["trimesh", "torch", "plotly", "numpy", "matplotlib", "rtree", "tkinter"]
+required_packages = ["trimesh", "torch", "plotly", "numpy", "matplotlib", "rtree", "opencv-python"]
 [installModule(package) for package in required_packages]
 
 import random
