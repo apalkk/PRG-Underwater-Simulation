@@ -1,40 +1,54 @@
 import sys
 import subprocess
 import os
+import platform
 import bpy
-import pkgutil
 
-# Get the path to the Python interpreter used by Blender
-python_path = sys.executable
+# Import code -- https://github.com/luckychris/install_blender_python_modules/blob/main/install_blender_python_module.py
+def isWindows():
+    return os.name == 'nt'
 
-# Determine the script directory
-script_directory = os.path.dirname(bpy.data.filepath)
+def isMacOS():
+    return os.name == 'posix' and platform.system() == "Darwin"
 
-# Create a folder for packages
-packages_directory = os.path.join(script_directory, "packages")
-os.makedirs(packages_directory, exist_ok=True)
+def isLinux():
+    return os.name == 'posix' and platform.system() == "Linux"
 
-# Print the path
-print("Blender's Python path:", python_path)
-
-# Ensure pip is installed
-subprocess.run([python_path, "-m", "ensurepip"])
-
-
-# Check if the required packages are installed
-required_packages = ["trimesh, torch, plotly, numpy, pickle, pyhocon"]
-
-installed_packages = {pkg.name for pkg in pkgutil.iter_modules()}
-
-for package in required_packages:
-    if package not in installed_packages:
-        # Install the required package in the created folder
-        subprocess.run([python_path, "-m", "pip", "install", "--target=" + packages_directory, package])
+def python_exec():
+    
+    if isWindows():
+        return os.path.join(sys.prefix, 'bin', 'python.exe')
+    elif isMacOS():
+    
+        try:
+            # 2.92 and older
+            path = bpy.app.binary_path_python
+        except AttributeError:
+            # 2.93 and later
+            import sys
+            path = sys.executable
+        return os.path.abspath(path)
+    elif isLinux():
+        import sys
+        return os.path.join(sys.prefix, 'bin', 'python3.11')
     else:
-        print(f"{package} is already installed")
+        print("sorry, still not implemented for ", os.name, " - ", platform.system)
 
-# Add the folder to the Python import path
-sys.path.append(packages_directory)
+def installModule(packageName):
+
+    try:
+        subprocess.call([python_exe, "import ", packageName])
+    except:
+        python_exe = python_exec()
+       # upgrade pip
+        subprocess.call([python_exe, "-m", "ensurepip"])
+        subprocess.call([python_exe, "-m", "pip", "install", "--upgrade", "pip"])
+       # install required packages
+        subprocess.call([python_exe, "-m", "pip", "install", packageName])
+# Should definitely work for mac, windows need to be checked according to repo ---
+
+required_packages = ["trimesh, torch, plotly, numpy, pickle, pyhocon"]
+[installModule(package) for package in required_packages]
 
 import random
 import bpy
@@ -48,6 +62,12 @@ import re
 import importlib.util
 import sys
 import json
+import torch
+import trimesh
+import plotly
+import numpy
+import pickle
+import pycohon
 
 # Get the current directory of the script
 script_directory = os.path.dirname(os.path.abspath(__file__))
