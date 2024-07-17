@@ -16,13 +16,25 @@ def load_and_scale_mesh(mesh_path, target_bounding_box_size=1.0):
     scale_factor = target_bounding_box_size / max_extent
     mesh.apply_scale(scale_factor)
     return mesh
-def export_to_obj(filename):
+
+def scale_mesh(meshh, target_bounding_box_size=1.0):
+    mesh = meshh
+    centroid = mesh.centroid
+    mesh.apply_translation(-centroid)
+    bounding_box = mesh.bounding_box.extents
+    max_extent = np.max(bounding_box)
+    scale_factor = target_bounding_box_size / max_extent
+    mesh.apply_scale(scale_factor)
+    return mesh
+
+def export_to_stl(filename):
     try:
-        bpy.ops.export_scene.obj(filepath=filename)
+        bpy.ops.export_mesh.stl(filepath=filename)
         print(f"Exported to: {filename}")
     except Exception as e:
-        print(f"Error exporting to OBJ: {e}")
+        print(f"Error exporting to stl: {e}")
         return None
+    return filename
 
 # Function to generate rays
 def gen_rays_at_sonar_for_proj(pose, azi_range, azi_bins, ele_range, pp_arc, **kwargs):
@@ -95,15 +107,14 @@ def get_camera_pose_matrix(scene, angle, camera_translation):
     pose_tensor = torch.tensor(pose_matrix, dtype=torch.float32)
     return pose_tensor
 
-def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXX.obj"):
+def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXX.stl"):
     # Example mesh path (replace with your actual mesh file)
-    mesh = load_and_scale_mesh(export_to_obj(mesh_path))
-    
+    mesh = load_and_scale_mesh(export_to_stl(mesh_path))
     # Create a scene and add the mesh to it
     scene = Scene()
     scene.add_geometry(mesh)
 
-    cam = bpy.data.objects[cam_name].data
+    cam = bpy.data.objects[cam_name]
     camera_translation = translation_matrix([camera_distance, 0, 0])
     scene.camera.transform = camera_translation
 
