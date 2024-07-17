@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import trimesh
 from trimesh import Scene
 from trimesh.transformations import rotation_matrix, translation_matrix, concatenate_matrices
+import bpy
 
 # Function to load and scale the mesh
 def load_and_scale_mesh(mesh_path, target_bounding_box_size=1.0):
