@@ -103,6 +103,7 @@ from RangeScanner import run_scanner, tupleToArray
 from ImuUtils import cal_linear_acc, cal_angular_vel, acc_gen, gyro_gen, accel_high_accuracy, gyro_high_accuracy, vib_from_env, cal_imu_step
 from Utils import get_position, render_img, save_values
 from CreateScene import delete_objs, create_landscape, add_bluerov, add_oyster, set_camera, set_light
+from Sonar import sonar_pipeline
 
 
 key = settings["key"]
@@ -276,7 +277,7 @@ def start_pipeline(floor_noise, landscape_texture_dir, bluerov_path, bluerov_loc
     scene = bpy.context.scene
 
     print("Entering sonar")
-    generate_sonar_image_data("/Users/aadipalnitkar/PRG-Underwater-Simulation/code/scene.obj", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code/cameras_sphere.npz", "/Users/aadipalnitkar/PRG-Underwater-Simulation/code", 1, 1, 1)
+    # sonar_pipeline()
     print("Exiting sonar")
 
     # BFAB80 HPL color
