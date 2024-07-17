@@ -1,6 +1,9 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+import cv2
+from matplotlib import pyplot as plt
 import trimesh
 from trimesh import Scene
 from trimesh.transformations import rotation_matrix, translation_matrix, concatenate_matrices
@@ -35,25 +38,6 @@ def export_to_stl(filename):
         print(f"Error exporting to stl: {e}")
         return None
     return filename
-
-def as_mesh(scene_or_mesh):
-    """
-    Convert a possible scene to a mesh.
-
-    If conversion occurs, the returned mesh has only vertex and face data.
-    """
-    if isinstance(scene_or_mesh, trimesh.Scene):
-        if len(scene_or_mesh.geometry) == 0:
-            mesh = None  # empty scene
-        else:
-            # we lose texture information here
-            mesh = trimesh.util.concatenate(
-                tuple(trimesh.Trimesh(vertices=g.vertices, faces=g.faces)
-                    for g in scene_or_mesh.geometry.values()))
-    else:
-        assert(isinstance(scene_or_mesh, trimesh.Trimesh))
-        mesh = scene_or_mesh
-    return mesh
 
 # Function to generate rays
 def gen_rays_at_sonar_for_proj(pose, azi_range, azi_bins, ele_range, pp_arc, **kwargs):
@@ -126,9 +110,41 @@ def get_camera_pose_matrix(scene, angle, camera_translation):
     pose_tensor = torch.tensor(pose_matrix, dtype=torch.float32)
     return pose_tensor
 
+def visualize_scene(mesh, ray_origins, ray_directions, camera_pose):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot the mesh
+    vertices = mesh.vertices
+    faces = mesh.faces
+    ax.plot_trisurf(vertices[:, 0], vertices[:, 1],
+                    faces, vertices[:, 2], color='cyan', alpha=0.5)
+
+    # Plot the camera
+    cam_pos = camera_pose[:3, 3]
+    ax.scatter(cam_pos[0], cam_pos[1], cam_pos[2],
+               color='red', s=100, label='Camera')
+
+    # Plot the rays
+    sample_indices = np.random.choice(
+        len(ray_origins), size=1000, replace=False)
+    sampled_origins = ray_origins[sample_indices]
+    sampled_directions = ray_directions[sample_indices]
+    for origin, direction in zip(sampled_origins, sampled_directions):
+        ax.plot([origin[0], origin[0] + direction[0]],
+                [origin[1], origin[1] + direction[1]],
+                [origin[2], origin[2] + direction[2]], color='orange', alpha=0.5)
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.legend()
+    plt.show()
+
+
 def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXX.stl"):
     # Example mesh path (replace with your actual mesh file)
-    mesh = as_mesh(load_and_scale_mesh(export_to_stl(mesh_path)))
+    mesh = load_and_scale_mesh(export_to_stl(mesh_path))
     # Create a scene and add the mesh to it
     scene = Scene()
     scene.add_geometry(mesh)
@@ -165,8 +181,6 @@ def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXX
     # Render the sonar image
     render_rt = render_sonar_image(pose_matrix, cam_info, mesh)
     if render_rt is not None:
-        print(render_rt)
-        plt.imshow(render_rt, cmap='gray')
-        plt.show()
+        cv2.imwrite("/Users/aadipalnitkar/PRG-Underwater-Simulation/code/sonar_img.png", render_rt)
     else:
         print("Rendering failed due to no intersections.")
