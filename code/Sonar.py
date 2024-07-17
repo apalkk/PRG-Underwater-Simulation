@@ -17,53 +17,12 @@ def load_and_scale_mesh(mesh_path, target_bounding_box_size=1.0):
     mesh.apply_scale(scale_factor)
     return mesh
 def export_to_obj(filename):
-    bpy.ops.wm.obj_export(
-    filepath=filename,
-    check_existing=True,
-    filter_blender=False,
-    filter_backup=False,
-    filter_image=False,
-    filter_movie=False,
-    filter_python=False,
-    filter_font=False,
-    filter_sound=False,
-    filter_text=False,
-    filter_archive=False,
-    filter_btx=False,
-    filter_collada=False,
-    filter_alembic=False,
-    filter_usd=False,
-    filter_obj=False,
-    filter_volume=False,
-    filter_folder=True,
-    filter_blenlib=False,
-    filemode=8,
-    display_type='DEFAULT',
-    sort_method='DEFAULT',
-    export_animation=False,
-    start_frame=-2147483648,
-    end_frame=2147483647,
-    forward_axis='NEGATIVE_Z',
-    up_axis='Y',
-    global_scale=1.0,
-    apply_modifiers=True,
-    export_eval_mode='DAG_EVAL_VIEWPORT',
-    export_selected_objects=False,
-    export_uv=True,
-    export_normals=True,
-    export_colors=False,
-    export_materials=True,
-    export_pbr_extensions=False,
-    path_mode='AUTO',
-    export_triangulated_mesh=False,
-    export_curves_as_nurbs=False,
-    export_object_groups=False,
-    export_material_groups=False,
-    export_vertex_groups=False,
-    export_smooth_groups=False,
-    smooth_group_bitflags=False,
-    filter_glob='*.obj;*.mtl'
-    )
+    try:
+        bpy.ops.export_scene.obj(filepath=filename)
+        print(f"Exported to: {filename}")
+    except Exception as e:
+        print(f"Error exporting to OBJ: {e}")
+        return None
 
 # Function to generate rays
 def gen_rays_at_sonar_for_proj(pose, azi_range, azi_bins, ele_range, pp_arc, **kwargs):
