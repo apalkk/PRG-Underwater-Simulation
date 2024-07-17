@@ -37,17 +37,19 @@ for package in required_packages:
 sys.path.append(packages_directory)
 
 import random
-import bpy
-import numpy as np
-import os
 import time
-import sys
 import requests
 import json
 import re
 import importlib.util
 import sys
 import json
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+import trimesh
+from trimesh import Scene
+from trimesh.transformations import rotation_matrix, translation_matrix, concatenate_matrices
 
 # Get the current directory of the script
 script_directory = os.path.dirname(os.path.abspath(__file__))
