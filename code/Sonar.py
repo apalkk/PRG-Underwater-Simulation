@@ -65,37 +65,6 @@ def export_to_obj(filename):
     filter_glob='*.obj;*.mtl'
     )
 
-# Example mesh path (replace with your actual mesh file)
-mesh_path = 'underwater_scene_for_aerial_image.obj'
-mesh = load_and_scale_mesh(mesh_path)
-
-# Create a scene and add the mesh to it
-scene = Scene()
-scene.add_geometry(mesh)
-
-# Place the camera at a distance to view the entire object
-camera_distance = 2.0  # Distance from the object
-camera_translation = translation_matrix([camera_distance, 0, 0])
-scene.camera.transform = camera_translation
-
-# Calculate vertical field of view (vfov) based on camera parameters
-sensor_height = 24.0  # mm (assumed)
-focal_length = 36.0  # mm (assumed)
-vfov = 2 * np.arctan(sensor_height / (2 * focal_length))
-vfov_degrees = np.degrees(vfov)
-
-ele_min = np.radians(-vfov_degrees / 2)
-ele_max = np.radians(vfov_degrees / 2)
-
-cam_info = dict(
-    azi_range=[-np.pi / 6, np.pi / 6],
-    azi_bins=1024,  # W
-    rad_range=[0.01, 3.0],  # Updated range
-    rad_bins=1024,  # H
-    ele_range=[ele_min, ele_max],
-    pp_arc=512,
-)
-
 # Function to generate rays
 def gen_rays_at_sonar_for_proj(pose, azi_range, azi_bins, ele_range, pp_arc, **kwargs):
     azis = torch.linspace(azi_range[0], azi_range[1], azi_bins)
@@ -167,18 +136,48 @@ def get_camera_pose_matrix(scene, angle):
     pose_tensor = torch.tensor(pose_matrix, dtype=torch.float32)
     return pose_tensor
 
-# Get the pose matrix at a specific angle (e.g., 0 radians)
-angle = 0
-pose_matrix = get_camera_pose_matrix(scene, angle)
+def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXXobj"):
+    # Example mesh path (replace with your actual mesh file)
+    mesh = load_and_scale_mesh(export_to_obj(mesh_path))
+    
+    # Create a scene and add the mesh to it
+    scene = Scene()
+    scene.add_geometry(mesh)
 
-# Print the pose matrix
-print("Camera Pose Matrix:\n", pose_matrix)
+    cam = bpy.data.objects[cam_name].data
+    camera_translation = translation_matrix([camera_distance, 0, 0])
+    scene.camera.transform = camera_translation
 
-# Render the sonar image
-render_rt = render_sonar_image(pose_matrix, cam_info, mesh)
-if render_rt is not None:
-    print(render_rt)
-    plt.imshow(render_rt, cmap='gray')
-    plt.show()
-else:
-    print("Rendering failed due to no intersections.")
+    # Calculate vertical field of view (vfov) based on camera parameters
+    sensor_height = cam.location.z
+    focal_length = np.float32(cam.data.lens)  # mm (assumed) f_in_mm = np.float32(cam.lens) 36
+    vfov = 2 * np.arctan(sensor_height / (2 * focal_length))
+    vfov_degrees = np.degrees(vfov)
+
+    ele_min = np.radians(-vfov_degrees / 2)
+    ele_max = np.radians(vfov_degrees / 2)
+
+    cam_info = dict(
+        azi_range=[-np.pi / 6, np.pi / 6],
+        azi_bins=1024,  # W
+        rad_range=[0.01, 3.0],  # Updated range
+        rad_bins=1024,  # H
+        ele_range=[ele_min, ele_max],
+        pp_arc=512,
+    )
+
+    # Get the pose matrix at a specific angle (e.g., 0 radians)
+    angle = 0
+    pose_matrix = get_camera_pose_matrix(scene, angle)
+    
+    # Print the pose matrix
+    print("Camera Pose Matrix:\n", pose_matrix)
+
+    # Render the sonar image
+    render_rt = render_sonar_image(pose_matrix, cam_info, mesh)
+    if render_rt is not None:
+        print(render_rt)
+        plt.imshow(render_rt, cmap='gray')
+        plt.show()
+    else:
+        print("Rendering failed due to no intersections.")
