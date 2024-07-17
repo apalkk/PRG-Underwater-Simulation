@@ -47,7 +47,7 @@ def installModule(packageName):
         subprocess.call([python_exe, "-m", "pip", "install", packageName])
 # Should definitely work for mac, windows need to be checked according to repo ---
 
-required_packages = ["trimesh", "torch", "plotly", "numpy", "pickle", "pyhocon"]
+required_packages = ["trimesh", "torch", "plotly", "numpy", "pickle"]
 [installModule(package) for package in required_packages]
 
 import random
@@ -67,7 +67,6 @@ import trimesh
 import plotly
 import numpy
 import pickle
-import pycohon
 
 # Get the current directory of the script
 script_directory = os.path.dirname(os.path.abspath(__file__))
