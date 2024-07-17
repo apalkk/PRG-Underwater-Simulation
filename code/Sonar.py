@@ -36,6 +36,25 @@ def export_to_stl(filename):
         return None
     return filename
 
+def as_mesh(scene_or_mesh):
+    """
+    Convert a possible scene to a mesh.
+
+    If conversion occurs, the returned mesh has only vertex and face data.
+    """
+    if isinstance(scene_or_mesh, trimesh.Scene):
+        if len(scene_or_mesh.geometry) == 0:
+            mesh = None  # empty scene
+        else:
+            # we lose texture information here
+            mesh = trimesh.util.concatenate(
+                tuple(trimesh.Trimesh(vertices=g.vertices, faces=g.faces)
+                    for g in scene_or_mesh.geometry.values()))
+    else:
+        assert(isinstance(scene_or_mesh, trimesh.Trimesh))
+        mesh = scene_or_mesh
+    return mesh
+
 # Function to generate rays
 def gen_rays_at_sonar_for_proj(pose, azi_range, azi_bins, ele_range, pp_arc, **kwargs):
     azis = torch.linspace(azi_range[0], azi_range[1], azi_bins)
@@ -109,7 +128,7 @@ def get_camera_pose_matrix(scene, angle, camera_translation):
 
 def sonar_pipeline(camera_distance = 2.0, cam_name="BlueROV", mesh_path="tempXXX.stl"):
     # Example mesh path (replace with your actual mesh file)
-    mesh = load_and_scale_mesh(export_to_stl(mesh_path))
+    mesh = as_mesh(load_and_scale_mesh(export_to_stl(mesh_path)))
     # Create a scene and add the mesh to it
     scene = Scene()
     scene.add_geometry(mesh)
