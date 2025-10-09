@@ -1,3 +1,5 @@
+Published @ https://ieeexplore.ieee.org/abstract/document/10337406
+
 # Underwater-Robotics
 We are working under the Perceptions and Robotics Group (PRG) at UMD, to use OpenAI's ChatGPT for applications in robotics. We are working on creating a high level function library which can be controlled by ChatGPT and can then be used to undertake several complex tasks which would otherwise require human intervention. Currently an ongoing project.
 
@@ -59,3 +61,4 @@ spec.loader.exec_module(simulate)
 ```
 ### Editing files outside of blender but no changes to blender files
 You must restart blender to let the edits outside of blender take effect.
+
